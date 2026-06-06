@@ -1,0 +1,146 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background-color: #f4f6f9;
+    color: #1a2332;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+}
+
+@layer components {
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer;
+  }
+  
+  .sidebar-link.active {
+    @apply bg-white/15 text-white shadow-sm;
+  }
+  
+  .sidebar-link:not(.active) {
+    @apply text-white/60 hover:text-white/90;
+    background: transparent;
+  }
+  .sidebar-link:not(.active):hover {
+    background: rgba(255,255,255,0.08);
+  }
+
+  .stat-card {
+    @apply rounded-2xl p-5 relative overflow-hidden;
+  }
+
+  .btn-primary {
+    @apply bg-navy-800 hover:bg-navy-900 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent hover:bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-navy-500/20 focus:border-navy-400 transition-all duration-200;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .badge-new {
+    @apply badge bg-blue-100 text-blue-700;
+  }
+
+  .badge-pending {
+    @apply badge bg-amber-100 text-amber-700;
+  }
+
+  .badge-inprocess {
+    @apply badge bg-orange-100 text-orange-700;
+  }
+
+  .badge-completed {
+    @apply badge bg-green-100 text-green-700;
+  }
+
+  .badge-urgent {
+    @apply badge bg-red-100 text-red-700;
+  }
+
+  .priority-low {
+    @apply badge bg-slate-100 text-slate-600;
+  }
+
+  .priority-medium {
+    @apply badge bg-yellow-100 text-yellow-700;
+  }
+
+  .priority-high {
+    @apply badge bg-orange-100 text-orange-700;
+  }
+
+  .priority-urgent {
+    @apply badge bg-red-100 text-red-700;
+  }
+
+  .priority-none {
+    @apply badge bg-gray-100 text-gray-500;
+  }
+  
+  .card {
+    @apply bg-white rounded-2xl shadow-card border border-gray-100;
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+  }
+
+  .modal-box {
+    @apply bg-white rounded-2xl shadow-modal w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scale-in;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Mobile sidebar overlay */
+.sidebar-overlay {
+  @apply fixed inset-0 bg-black/50 z-30 lg:hidden;
+}
+
+/* Table row hover */
+.table-row-hover:hover {
+  background-color: #f8fafc;
+}
+
+/* Custom select arrow */
+select {
+  background-image: none;
+}
