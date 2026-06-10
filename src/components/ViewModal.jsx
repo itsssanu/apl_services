@@ -6,6 +6,12 @@ export default function ViewModal({ open, onClose, item }) {
 
   const statusClass = STATUS_STYLES[item.status] || 'badge-new';
   const priorityClass = PRIORITY_STYLES[item.priority] || 'priority-none';
+  const accessoriesTotal =
+  item.accessories?.reduce(
+    (sum, accessory) =>
+      sum + (parseFloat(accessory.amount) || 0),
+    0
+  ) || 0;
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -35,7 +41,7 @@ export default function ViewModal({ open, onClose, item }) {
             <DetailItem icon={Phone} label="Phone" value={item.phone} />
             <DetailItem icon={MapPin} label="City" value={item.city || '—'} />
             <DetailItem icon={Calendar} label="Date" value={formatDate(item.date)} />
-            <DetailItem icon={Clock} label="Due Date" value={formatDate(item.dueDate) || '—'} />
+            <DetailItem icon={Clock} label="Due Date" value={item.dueDate ? formatDate(item.dueDate) : '—'} />
             <DetailItem icon={AlertCircle} label="Work Type" value={item.workType || '—'} />
             {item.reminder && <DetailItem icon={MessageSquare} label="Reminder" value={item.reminder} />}
           </div>
@@ -48,26 +54,89 @@ export default function ViewModal({ open, onClose, item }) {
             </div>
           )}
 
+          {item.accessories?.some(a => a.name || a.amount) && (
+  <div className="bg-blue-50 rounded-xl p-4">
+    <div className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-3">
+      Accessories
+    </div>
+
+    <div className="space-y-2">
+      {item.accessories.map((accessory, index) => (
+        <div
+          key={index}
+          className="flex items-center justify-between bg-white rounded-lg px-3 py-2"
+        >
+          <span className="text-sm text-gray-700">
+            {accessory.name || 'Unnamed Product'}
+          </span>
+
+          <span className="font-medium text-gray-900">
+            {formatCurrency(accessory.amount)}
+          </span>
+        </div>
+      ))}
+    </div>
+
+    <div className="mt-3 pt-3 border-t border-blue-200 flex justify-between">
+      <span className="text-sm font-medium text-gray-600">
+        Accessories Total
+      </span>
+
+      <span className="font-semibold text-blue-700">
+        {formatCurrency(accessoriesTotal)}
+      </span>
+    </div>
+  </div>
+)}
+
           {/* Financial summary */}
-          {(item.totalAmount || item.advance) && (
-            <div className="bg-navy-950 rounded-xl p-4 text-white">
-              <div className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-3">Financials</div>
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div>
-                  <div className="text-white/50 text-xs mb-1">Total</div>
-                  <div className="font-display font-semibold">{formatCurrency(item.totalAmount)}</div>
-                </div>
-                <div>
-                  <div className="text-white/50 text-xs mb-1">Advance</div>
-                  <div className="font-display font-semibold text-green-400">{formatCurrency(item.advance)}</div>
-                </div>
-                <div>
-                  <div className="text-white/50 text-xs mb-1">Balance</div>
-                  <div className="font-display font-semibold text-amber-400">{formatCurrency(item.balance)}</div>
-                </div>
-              </div>
-            </div>
-          )}
+         {(item.totalAmount || item.advance || item.balance) && (
+  <div className="bg-navy-950 rounded-xl p-4 text-white">
+    <div className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-3">
+      Financial Details
+    </div>
+
+    <div className="grid grid-cols-2 gap-3">
+
+      <div className="bg-white/5 rounded-lg p-3">
+        <div className="text-white/50 text-xs">
+          Service Amount
+        </div>
+        <div className="font-semibold mt-1">
+          {formatCurrency(item.totalAmount)}
+        </div>
+      </div>
+
+      <div className="bg-white/5 rounded-lg p-3">
+        <div className="text-white/50 text-xs">
+          Accessories Total
+        </div>
+        <div className="font-semibold mt-1">
+          {formatCurrency(accessoriesTotal)}
+        </div>
+      </div>
+
+      <div className="bg-white/5 rounded-lg p-3">
+        <div className="text-white/50 text-xs">
+          Advance Paid
+        </div>
+        <div className="font-semibold text-green-400 mt-1">
+          {formatCurrency(item.advance)}
+        </div>
+      </div>
+
+      <div className="bg-white/5 rounded-lg p-3">
+        <div className="text-white/50 text-xs">
+          Balance
+        </div>
+        <div className="font-semibold text-amber-400 mt-1">
+          {formatCurrency(item.balance)}
+        </div>
+      </div>
+
+    </div>
+  </div>
+)}
         </div>
 
         <div className="px-6 pb-6 flex justify-end">

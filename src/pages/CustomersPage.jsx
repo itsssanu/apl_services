@@ -93,7 +93,8 @@ export default function CustomersPage({ items, onSave, onDelete }) {
   // Filters
   const [nameFilter, setNameFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+const [endDate, setEndDate] = useState('');
   const [workTypeFilter, setWorkTypeFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
 
@@ -108,17 +109,18 @@ export default function CustomersPage({ items, onSave, onDelete }) {
     return items.filter(item => {
       if (nameFilter && !item.name?.toLowerCase().includes(nameFilter.toLowerCase())) return false;
       if (statusFilter && item.status !== statusFilter) return false;
-      if (dateFilter && item.date !== dateFilter) return false;
+      if (startDate && item.date < startDate) return false;
+      if (endDate && item.date > endDate) return false;
       if (workTypeFilter && item.workType !== workTypeFilter) return false;
       if (priorityFilter && item.priority !== priorityFilter) return false;
       return true;
     });
-  }, [items, nameFilter, statusFilter, dateFilter, workTypeFilter, priorityFilter]);
+  }, [items, nameFilter, statusFilter, startDate, endDate, workTypeFilter, priorityFilter]);
 
-  const hasFilters = nameFilter || statusFilter || dateFilter || workTypeFilter || priorityFilter;
+  const hasFilters = nameFilter || statusFilter || startDate || endDate || workTypeFilter || priorityFilter;
 
   function clearFilters() {
-    setNameFilter(''); setStatusFilter(''); setDateFilter('');
+    setNameFilter(''); setStatusFilter(''); setStartDate(''); setEndDate('');
     setWorkTypeFilter(''); setPriorityFilter('');
   }
 
@@ -193,12 +195,25 @@ function confirmDelete() {
           </select>
 
           {/* Date */}
-          <input
-            type="date"
-            value={dateFilter}
-            onChange={e => setDateFilter(e.target.value)}
-            className="input-field h-9 text-xs w-auto"
-          />
+          <div className="flex items-center gap-2">
+  <input
+    type="date"
+    value={startDate}
+    onChange={e => setStartDate(e.target.value)}
+    className="input-field h-9 text-xs"
+    title="Start Date"
+  />
+
+  <span className="text-gray-400 text-xs">to</span>
+
+  <input
+    type="date"
+    value={endDate}
+    onChange={e => setEndDate(e.target.value)}
+    className="input-field h-9 text-xs"
+    title="End Date"
+  />
+</div>
 
           {/* Work Type */}
           <select value={workTypeFilter} onChange={e => setWorkTypeFilter(e.target.value)} className="input-field h-9 text-xs w-auto min-w-[140px]">

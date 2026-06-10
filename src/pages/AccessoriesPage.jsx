@@ -1,10 +1,25 @@
-import { useState, useMemo } from 'react';
-import { Plus, Trash2, Package, Search, X, Calendar, Tag, IndianRupee, AlertTriangle } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Plus, Trash2, Package, Search, X, Calendar, Tag, IndianRupee, Eye, Pencil, AlertTriangle } from 'lucide-react';
 import { WORK_TYPES, formatDate, formatCurrency, generateId, today } from '../utils/constants';
+import AccessoryViewModal from '../components/AccessoryViewModal';
 
 /* ── Add Product Modal ───────────────────────────────────────────── */
-function AddProductModal({ open, onClose, onSave }) {
+function AddProductModal({ open, onClose, onSave, editItem }) {
   const [form, setForm] = useState({ workType: '', buyDate: today(), productName: '', amount: '' });
+
+  useEffect(() => {
+    if (editItem) {
+      setForm(editItem);
+    } else {
+      setForm({
+        workType: '',
+        buyDate: today(),
+        productName: '',
+        amount: ''
+      });
+    }
+  }, [editItem, open]);
+
   if (!open) return null;
 
   function handleChange(e) {
@@ -13,7 +28,7 @@ function AddProductModal({ open, onClose, onSave }) {
   function handleSubmit(e) {
     e.preventDefault();
     if (!form.productName.trim()) return;
-    onSave({ ...form, id: generateId() });
+    onSave({ ...form, id: editItem?.id || generateId() });
     setForm({ workType: '', buyDate: today(), productName: '', amount: '' });
     onClose();
   }
@@ -120,7 +135,7 @@ function DeleteModal({ open, item, onConfirm, onCancel }) {
 }
 
 /* ── Accessory Card (mobile) ─────────────────────────────────────── */
-function AccessoryCard({ item, onDelete }) {
+function AccessoryCard({ item, onView, onEdit, onDelete }) {
   return (
     <div className="card p-4 hover:shadow-card-hover transition-shadow duration-200">
       <div className="flex items-start justify-between">
@@ -137,12 +152,30 @@ function AccessoryCard({ item, onDelete }) {
             )}
           </div>
         </div>
-        <button
-          onClick={() => onDelete(item)}
-          className="ml-2 p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="flex justify-end gap-1">
+
+          <button
+            onClick={() => onView(item)}
+            className="p-1.5 rounded-lg hover:bg-blue-50"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => onEdit(item)}
+            className="p-1.5 rounded-lg hover:bg-gray-100"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => onDelete(item)}
+            className="p-1.5 rounded-lg hover:bg-red-50"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+
+        </div>
       </div>
 
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
@@ -161,23 +194,28 @@ function AccessoryCard({ item, onDelete }) {
 /* ── Main Page ───────────────────────────────────────────────────── */
 export default function AccessoriesPage({ accessories, onSave, onDelete }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [viewItem, setViewItem] = useState(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ open: false, item: null });
 
   const [workTypeFilter, setWorkTypeFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [nameFilter, setNameFilter] = useState('');
 
   const filtered = useMemo(() => {
     return accessories.filter(a => {
       if (workTypeFilter && a.workType !== workTypeFilter) return false;
-      if (dateFilter && a.buyDate !== dateFilter) return false;
+      if (startDate && a.buyDate < startDate) return false;
+      if (endDate && a.buyDate > endDate) return false;
       if (nameFilter && !a.productName?.toLowerCase().includes(nameFilter.toLowerCase())) return false;
       return true;
     });
-  }, [accessories, workTypeFilter, dateFilter, nameFilter]);
+  }, [accessories, workTypeFilter, startDate, endDate, nameFilter]);
 
   const filteredTotal = filtered.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
-  const hasFilters = workTypeFilter || dateFilter || nameFilter;
+  const hasFilters = workTypeFilter || startDate || endDate || nameFilter;
 
   function askDelete(item) {
     setDeleteModal({ open: true, item });
@@ -211,7 +249,8 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
             {WORK_TYPES.map(w => <option key={w} value={w}>{w}</option>)}
           </select>
 
-          <input type="date" value={dateFilter} onChange={e => setDateFilter(e.target.value)} className="input-field h-9 text-xs w-auto" />
+          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="input-field h-9 text-xs w-auto" />
+          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="input-field h-9 text-xs w-auto" />
 
           <div className="relative flex-1 min-w-[160px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -223,7 +262,7 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
 
           {hasFilters && (
             <button
-              onClick={() => { setWorkTypeFilter(''); setDateFilter(''); setNameFilter(''); }}
+              onClick={() => { setWorkTypeFilter(''); setNameFilter(''); setStartDate(''); setEndDate(''); }}
               className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
             >
               <X className="w-3.5 h-3.5" /> Clear
@@ -271,9 +310,36 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
                     <td className="px-5 py-4"><span className="text-sm font-semibold text-gray-800">{item.productName}</span></td>
                     <td className="px-5 py-4 text-right"><span className="text-sm font-bold text-navy-800">{formatCurrency(item.amount)}</span></td>
                     <td className="px-5 py-4 text-right">
-                      <button onClick={() => askDelete(item)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex justify-end gap-1">
+
+                        <button
+                          onClick={() => {
+                            setViewItem(item);
+                            setViewModalOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-blue-50"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setEditItem(item);
+                            setModalOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-gray-100"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => askDelete(item)}
+                          className="p-1.5 rounded-lg hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -303,7 +369,19 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
         ) : (
           <>
             {filtered.map(item => (
-              <AccessoryCard key={item.id} item={item} onDelete={askDelete} />
+              <AccessoryCard
+                key={item.id}
+                item={item}
+                onView={(item) => {
+                  setViewItem(item);
+                  setViewModalOpen(true);
+                }}
+                onEdit={(item) => {
+                  setEditItem(item);
+                  setModalOpen(true);
+                }}
+                onDelete={askDelete}
+              />
             ))}
             {/* Mobile total footer */}
             <div className="card px-4 py-3 flex items-center justify-between">
@@ -315,7 +393,23 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
       </div>
 
       {/* Modals */}
-      <AddProductModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={onSave} />
+      <AddProductModal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setEditItem(null);
+        }}
+        onSave={onSave}
+        editItem={editItem}
+      />
+      <AccessoryViewModal
+        open={viewModalOpen}
+        onClose={() => {
+          setViewModalOpen(false);
+          setViewItem(null);
+        }}
+        item={viewItem}
+      />
       <DeleteModal
         open={deleteModal.open}
         item={deleteModal.item}

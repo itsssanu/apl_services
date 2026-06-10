@@ -24,39 +24,76 @@ function SummaryCard({ label, value, type, icon: Icon }) {
 
 export default function AmountPage({ workItems }) {
   const [nameFilter, setNameFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  console.log("workItems", workItems);
 
   // Per-customer summaries
   const customerMap = useMemo(() => {
     const map = {};
     workItems.forEach(item => {
       const key = item.name?.trim() || 'Unknown';
-      if (!map[key]) map[key] = { name: key, jobs: 0, total: 0, advance: 0, balance: 0, dates: [] };
+
+      if (!map[key]) {
+        map[key] = {
+          name: key,
+          jobs: 0,
+          total: 0,
+          advance: 0,
+          balance: 0,
+          latestDate: item.date || '',
+        };
+      }
+
       map[key].jobs += 1;
       map[key].total += parseFloat(item.totalAmount) || 0;
       map[key].advance += parseFloat(item.advance) || 0;
       map[key].balance += parseFloat(item.balance) || 0;
-      if (item.date) map[key].dates.push(item.date);
+
+      if (item.date && item.date > map[key].latestDate) {
+        map[key].latestDate = item.date;
+      }
     });
     return Object.values(map);
   }, [workItems]);
 
   const filtered = useMemo(() => {
     return customerMap.filter(c => {
-      if (nameFilter && !c.name.toLowerCase().includes(nameFilter.toLowerCase())) return false;
-      if (dateFilter) {
-        const hasDate = (workItems.filter(w => w.name?.trim() === c.name && w.date === dateFilter)).length > 0;
-        if (!hasDate) return false;
+      if (
+        nameFilter &&
+        !c.name.toLowerCase().includes(nameFilter.toLowerCase())
+      ) {
+        return false;
       }
+
+      if (startDate || endDate) {
+        const customerWorks = workItems.filter(
+          w => w.name?.trim() === c.name
+        );
+
+        const hasDateInRange = customerWorks.some(w => {
+          if (!w.date) return false;
+
+          const itemDate = new Date(w.date);
+
+          if (startDate && itemDate < new Date(startDate)) return false;
+          if (endDate && itemDate > new Date(endDate)) return false;
+
+          return true;
+        });
+
+        if (!hasDateInRange) return false;
+      }
+
       return true;
     });
-  }, [customerMap, nameFilter, dateFilter, workItems]);
+  }, [customerMap, nameFilter, startDate, endDate, workItems]);
 
   const overallTotal = filtered.reduce((s, c) => s + c.total, 0);
   const overallAdvance = filtered.reduce((s, c) => s + c.advance, 0);
   const overallBalance = filtered.reduce((s, c) => s + c.balance, 0);
 
-  const hasFilters = nameFilter || dateFilter;
+  const hasFilters = nameFilter || startDate || endDate;
 
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto">
@@ -81,13 +118,22 @@ export default function AmountPage({ workItems }) {
           </div>
           <input
             type="date"
-            value={dateFilter}
-            onChange={e => setDateFilter(e.target.value)}
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
             className="input-field h-9 text-xs w-auto"
+            title="Start Date"
+          />
+
+          <input
+            type="date"
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+            className="input-field h-9 text-xs w-auto"
+            title="End Date"
           />
           {hasFilters && (
             <button
-              onClick={() => { setNameFilter(''); setDateFilter(''); }}
+              onClick={() => { setNameFilter(''); setStartDate(''); setEndDate(''); }}
               className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
             >
               <X className="w-3.5 h-3.5" /> Clear Filters
@@ -124,8 +170,7 @@ export default function AmountPage({ workItems }) {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-12 text-gray-400">
-                    <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <td colSpan={6} className="text-center py-12 text-gray-400">                    <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
                     <div className="font-medium">No customers found</div>
                   </td>
                 </tr>
@@ -137,9 +182,18 @@ export default function AmountPage({ workItems }) {
                         <div className="w-8 h-8 rounded-xl bg-navy-900 flex items-center justify-center text-white font-display font-bold text-sm flex-shrink-0">
                           {c.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-semibold text-gray-800 text-sm">{c.name}</span>
+                           <div>
+                      <div className="font-semibold text-gray-800 text-sm">{c.name}</div>
+                      <div className="text-xs text-gray-400">
+                        {formatDate(c.latestDate)}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {c.jobs} job{c.jobs !== 1 ? 's' : ''}
+                      </div>
+                    </div>
                       </div>
                     </td>
+            
                     <td className="px-5 py-4 text-center">
                       <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-navy-100 text-navy-700 text-xs font-bold">{c.jobs}</span>
                     </td>
@@ -161,13 +215,31 @@ export default function AmountPage({ workItems }) {
             {filtered.length > 0 && (
               <tfoot>
                 <tr className="bg-navy-950 text-white">
-                  <td className="px-5 py-4 font-semibold text-white/70 text-sm">Total</td>
-                  <td className="px-5 py-4 text-center">
-                    <span className="text-white/60 text-sm">{filtered.reduce((s, c) => s + c.jobs, 0)}</span>
+                  <td className="px-5 py-4 font-semibold text-white/70 text-sm">
+                    Total
                   </td>
-                  <td className="px-5 py-4 text-right font-display font-bold">{formatCurrency(overallTotal)}</td>
-                  <td className="px-5 py-4 text-right font-display font-bold text-green-400">{formatCurrency(overallAdvance)}</td>
-                  <td className="px-5 py-4 text-right font-display font-bold text-amber-400">{formatCurrency(overallBalance)}</td>
+
+                  <td className="px-5 py-4 text-center">
+                    <span className="text-white/60 text-sm">
+                      {filtered.reduce((s, c) => s + c.jobs, 0)}
+                    </span>
+                  </td>
+
+                  <td className="px-5 py-4 text-center">
+                    -
+                  </td>
+
+                  <td className="px-5 py-4 text-right font-display font-bold">
+                    {formatCurrency(overallTotal)}
+                  </td>
+
+                  <td className="px-5 py-4 text-right font-display font-bold text-green-400">
+                    {formatCurrency(overallAdvance)}
+                  </td>
+
+                  <td className="px-5 py-4 text-right font-display font-bold text-amber-400">
+                    {formatCurrency(overallBalance)}
+                  </td>
                 </tr>
               </tfoot>
             )}
@@ -191,6 +263,9 @@ export default function AmountPage({ workItems }) {
                     </div>
                     <div>
                       <div className="font-semibold text-gray-800 text-sm">{c.name}</div>
+                       <div className="text-xs text-gray-400">
+    {formatDate(c.latestDate)}
+  </div>
                       <div className="text-xs text-gray-400">{c.jobs} job{c.jobs !== 1 ? 's' : ''}</div>
                     </div>
                   </div>

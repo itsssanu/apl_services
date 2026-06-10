@@ -16,6 +16,14 @@ const defaultForm = {
   totalAmount: '',
   advance: '',
   balance: '',
+
+  // Accessories
+  accessories: [
+    {
+      name: '',
+      amount: '',
+    },
+  ],
 };
 
 export default function WorkItemModal({ open, onClose, onSave, editItem }) {
@@ -35,27 +43,122 @@ export default function WorkItemModal({ open, onClose, onSave, editItem }) {
 
   if (!open) return null;
 
+  const accessoriesTotal = form.accessories.reduce(
+    (sum, item) => sum + (parseFloat(item.amount) || 0),
+    0
+  );
+
   const filteredWorkTypes = WORK_TYPES.filter(w =>
     w.toLowerCase().includes(workTypeSearch.toLowerCase())
   );
 
-  function handleChange(e) {
-    const { name, value } = e.target;
+function handleChange(e) {
+  const { name, value } = e.target;
+
+  setForm(prev => {
+    const updated = { ...prev, [name]: value };
+
+    if (name === 'totalAmount' || name === 'advance') {
+      const total =
+        parseFloat(
+          name === 'totalAmount'
+            ? value
+            : prev.totalAmount
+        ) || 0;
+
+      const accessoriesTotal =
+        prev.accessories.reduce(
+          (sum, item) =>
+            sum + (parseFloat(item.amount) || 0),
+          0
+        );
+
+      const billAmount = total + accessoriesTotal;
+
+      const advance =
+  parseFloat(
+    name === 'advance'
+      ? value
+      : prev.advance
+  ) || 0;
+
+updated.balance = (billAmount - advance).toString();
+    }
+
+    return updated;
+  });
+}
+
+  function handleAccessoryChange(index, field, value) {
     setForm(prev => {
-      const updated = { ...prev, [name]: value };
-      if (name === 'totalAmount' || name === 'advance') {
-        const total = parseFloat(name === 'totalAmount' ? value : prev.totalAmount) || 0;
-        const adv = parseFloat(name === 'advance' ? value : prev.advance) || 0;
-        updated.balance = Math.max(0, total - adv).toString();
-      }
-      return updated;
+      const accessories = [...prev.accessories];
+
+      accessories[index] = {
+        ...accessories[index],
+        [field]: value,
+      };
+
+      const totalAmount = parseFloat(prev.totalAmount) || 0;
+
+      const accessoriesTotal = accessories.reduce(
+        (sum, item) => sum + (parseFloat(item.amount) || 0),
+        0
+      );
+
+      const billAmount = totalAmount + accessoriesTotal;
+
+      const advance = parseFloat(prev.advance) || 0;
+
+return {
+  ...prev,
+  accessories,
+  balance: (billAmount - advance).toString(),
+};
+    });
+  }
+
+  function addAccessory() {
+    setForm(prev => ({
+      ...prev,
+      accessories: [
+        ...prev.accessories,
+        {
+          name: '',
+          amount: '',
+        },
+      ],
+    }));
+  }
+
+  function removeAccessory(index) {
+    setForm(prev => {
+      const accessories = prev.accessories.filter(
+        (_, i) => i !== index
+      );
+
+      const totalAmount = parseFloat(prev.totalAmount) || 0;
+
+      const accessoriesTotal = accessories.reduce(
+        (sum, item) => sum + (parseFloat(item.amount) || 0),
+        0
+      );
+
+      const billAmount = totalAmount + accessoriesTotal;
+
+     const advance = parseFloat(prev.advance) || 0;
+
+return {
+  ...prev,
+  accessories,
+  balance: (billAmount - advance).toString(),
+};
     });
   }
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!form.name.trim() || !form.phone.trim()) {
-      alert('Please fill in Customer Name and Phone Number.');
+    if (!form.name.trim()) {
+      alert('Please fill in Customer Name.');
       return;
     }
     const item = {
@@ -102,14 +205,13 @@ export default function WorkItemModal({ open, onClose, onSave, editItem }) {
               />
             </div>
             <div>
-              <label className="label">Mobile Number *</label>
+              <label className="label">Mobile Number</label>
               <input
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
                 placeholder="e.g. 9876543210"
                 className="input-field"
-                required
               />
             </div>
           </div>
@@ -224,12 +326,102 @@ export default function WorkItemModal({ open, onClose, onSave, editItem }) {
             />
           </div>
 
+          {/* Accessories Details */}
+          <div className="bg-blue-50 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Accessories Details
+              </div>
+
+              <button
+                type="button"
+                onClick={addAccessory}
+                className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg"
+              >
+                + Add Product
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {form.accessories.map((item, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-12 gap-3 items-end"
+                >
+                  <div className="col-span-7">
+                    <label className="label">
+                      Product Name
+                    </label>
+
+                    <input
+                      value={item.name}
+                      onChange={(e) =>
+                        handleAccessoryChange(
+                          index,
+                          'name',
+                          e.target.value
+                        )
+                      }
+                      placeholder="Product Name"
+                      className="input-field"
+                    />
+                  </div>
+
+                  <div className="col-span-4">
+                    <label className="label">
+                      Amount
+                    </label>
+
+                    <input
+                      type="number"
+                      value={item.amount}
+                      onChange={(e) =>
+                        handleAccessoryChange(
+                          index,
+                          'amount',
+                          e.target.value
+                        )
+                      }
+                      placeholder="0"
+                      className="input-field"
+                    />
+                  </div>
+
+                  <div className="col-span-1">
+                    {form.accessories.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeAccessory(index)
+                        }
+                        className="w-10 h-10 flex items-center justify-center text-red-500 hover:bg-red-100 rounded-lg"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Amount section */}
           <div className="bg-gray-50 rounded-2xl p-4">
             <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
               Financial Details
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="mb-4 p-3 bg-white rounded-xl border">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">
+                    Accessories Total
+                  </span>
+
+                  <span className="font-semibold">
+                    ₹{accessoriesTotal}
+                  </span>
+                </div>
+              </div>
               <div>
                 <label className="label">Total Amount</label>
                 <div className="relative">
@@ -272,6 +464,7 @@ export default function WorkItemModal({ open, onClose, onSave, editItem }) {
                 </div>
               </div>
             </div>
+
           </div>
 
           {/* Footer */}
