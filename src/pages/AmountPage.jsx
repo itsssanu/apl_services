@@ -26,7 +26,6 @@ export default function AmountPage({ workItems }) {
   const [nameFilter, setNameFilter] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  console.log("workItems", workItems);
 
   // Per-customer summaries
   const customerMap = useMemo(() => {
