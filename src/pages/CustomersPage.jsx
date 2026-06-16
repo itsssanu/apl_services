@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Plus, Search, Filter, X, Eye, Pencil, Trash2,
-  Briefcase, Clock, RefreshCw, CheckCircle2, Phone, MapPin, Calendar, ChevronDown
+  Briefcase, Clock, RefreshCw, CheckCircle2, Phone, MapPin, Calendar, ChevronDown,
+  Sparkles
 } from 'lucide-react';
 import {
   WORK_TYPES, STATUSES, PRIORITIES,
@@ -13,8 +14,9 @@ import ViewModal from '../components/ViewModal';
 
 function StatCard({ label, value, type, icon: Icon }) {
   const styles = {
-    total: { bg: 'bg-blue-50', icon: 'text-blue-600 bg-blue-100', num: 'text-blue-900', sub: 'text-blue-500' },
-    pending: { bg: 'bg-amber-50', icon: 'text-amber-600 bg-amber-100', num: 'text-amber-900', sub: 'text-amber-500' },
+    total: { bg: 'bg-indigo-50', icon: 'text-indigo-600 bg-indigo-100', num: 'text-indigo-900', sub: 'text-indigo-500' },
+    new: { bg: 'bg-amber-50', icon: 'text-amber-600 bg-amber-100', num: 'text-amber-900', sub: 'text-amber-500' },
+    pending: { bg: 'bg-red-50', icon: 'text-red-600 bg-red-100', num: 'text-red-900', sub: 'text-red-500' },
     inprocess: { bg: 'bg-orange-50', icon: 'text-orange-600 bg-orange-100', num: 'text-orange-900', sub: 'text-orange-500' },
     completed: { bg: 'bg-green-50', icon: 'text-green-600 bg-green-100', num: 'text-green-900', sub: 'text-green-500' },
   };
@@ -36,6 +38,9 @@ function StatCard({ label, value, type, icon: Icon }) {
 function CustomerCard({ item, onView, onEdit, onDelete }) {
   const statusClass = STATUS_STYLES[item.status] || 'badge-new';
   const priorityClass = PRIORITY_STYLES[item.priority] || 'priority-none';
+
+  console.log("item", item);
+  
   return (
     <div className="card p-4 hover:shadow-card-hover transition-shadow duration-200">
       <div className="flex items-start justify-between mb-3">
@@ -82,7 +87,7 @@ function CustomerCard({ item, onView, onEdit, onDelete }) {
   );
 }
 
-export default function CustomersPage({ items, onSave, onDelete }) {
+export default function CustomersPage({ items, onSave, onDelete, filters, setFilters, page, setPage, totalRows }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [viewItem, setViewItem] = useState(null);
@@ -90,38 +95,32 @@ export default function CustomersPage({ items, onSave, onDelete }) {
   const [deleteId, setDeleteId] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-  // Filters
-  const [nameFilter, setNameFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [startDate, setStartDate] = useState('');
-const [endDate, setEndDate] = useState('');
-  const [workTypeFilter, setWorkTypeFilter] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState('');
-
+  const {
+    name,
+    status,
+    workType,
+    priority,
+    startDate,
+    endDate
+  } = filters;
   // Stats
   const total = items.length;
+  const newwork = items.filter(i => i.status === 'New').length;
   const pending = items.filter(i => i.status === 'Pending').length;
   const inProcess = items.filter(i => i.status === 'InProcess').length;
   const completed = items.filter(i => i.status === 'Completed').length;
 
-  // Filtered
-  const filtered = useMemo(() => {
-    return items.filter(item => {
-      if (nameFilter && !item.name?.toLowerCase().includes(nameFilter.toLowerCase())) return false;
-      if (statusFilter && item.status !== statusFilter) return false;
-      if (startDate && item.date < startDate) return false;
-      if (endDate && item.date > endDate) return false;
-      if (workTypeFilter && item.workType !== workTypeFilter) return false;
-      if (priorityFilter && item.priority !== priorityFilter) return false;
-      return true;
-    });
-  }, [items, nameFilter, statusFilter, startDate, endDate, workTypeFilter, priorityFilter]);
-
-  const hasFilters = nameFilter || statusFilter || startDate || endDate || workTypeFilter || priorityFilter;
+  const hasFilters = name || status || startDate || endDate || workType || priority;
 
   function clearFilters() {
-    setNameFilter(''); setStatusFilter(''); setStartDate(''); setEndDate('');
-    setWorkTypeFilter(''); setPriorityFilter('');
+    setFilters({
+      name: "",
+      status: "",
+      workType: "",
+      priority: "",
+      startDate: "",
+      endDate: "",
+    });
   }
 
   function handleEdit(item) {
@@ -134,19 +133,19 @@ const [endDate, setEndDate] = useState('');
     setViewModalOpen(true);
   }
 
-function handleDelete(id) {
-  setDeleteId(id);
-  setDeleteModalOpen(true);
-}
-
-function confirmDelete() {
-  if (deleteId) {
-    onDelete(deleteId);
+  function handleDelete(id) {
+    setDeleteId(id);
+    setDeleteModalOpen(true);
   }
 
-  setDeleteModalOpen(false);
-  setDeleteId(null);
-}
+  function confirmDelete() {
+    if (deleteId) {
+      onDelete(deleteId);
+    }
+
+    setDeleteModalOpen(false);
+    setDeleteId(null);
+  }
 
   return (
     <div className="p-4 lg:p-6 max-w-7xl mx-auto">
@@ -168,6 +167,7 @@ function confirmDelete() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard label="Total Jobs" value={total} type="total" icon={Briefcase} />
+        <StatCard label="New" value={newwork} type="new" icon={Sparkles} />
         <StatCard label="Pending" value={pending} type="pending" icon={Clock} />
         <StatCard label="In Process" value={inProcess} type="inprocess" icon={RefreshCw} />
         <StatCard label="Completed" value={completed} type="completed" icon={CheckCircle2} />
@@ -181,48 +181,90 @@ function confirmDelete() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <input
               type="text"
-              value={nameFilter}
-              onChange={e => setNameFilter(e.target.value)}
+              value={name}
+              onChange={e => {
+                setPage(1);
+                setFilters(prev => ({
+                  ...prev,
+                  name: e.target.value
+                }));
+              }}
               placeholder="Search name..."
               className="input-field pl-9 h-9 text-xs"
             />
           </div>
 
           {/* Status */}
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="input-field h-9 text-xs w-auto min-w-[130px]">
+          <select value={status}
+            onChange={e => {
+              setPage(1);
+              setFilters(prev => ({
+                ...prev,
+                status: e.target.value
+              }))
+            }}
+            className="input-field h-9 text-xs w-auto min-w-[130px]">
             <option value="">All Statuses</option>
             {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
 
           {/* Date */}
           <div className="flex items-center gap-2">
-  <input
-    type="date"
-    value={startDate}
-    onChange={e => setStartDate(e.target.value)}
-    className="input-field h-9 text-xs"
-    title="Start Date"
-  />
+            <input
+              type="date"
+              value={startDate}
+              onChange={e => {
+                setPage(1);
+                setFilters(prev => ({
+                  ...prev,
+                  startDate: e.target.value
+                }))
+              }}
+              className="input-field h-9 text-xs"
+              title="Start Date"
+            />
 
-  <span className="text-gray-400 text-xs">to</span>
+            <span className="text-gray-400 text-xs">to</span>
 
-  <input
-    type="date"
-    value={endDate}
-    onChange={e => setEndDate(e.target.value)}
-    className="input-field h-9 text-xs"
-    title="End Date"
-  />
-</div>
+            <input
+              type="date"
+              value={endDate}
+              onChange={e => {
+                setPage(1);
+                setFilters(prev => ({
+                  ...prev,
+                  endDate: e.target.value
+                }))
+              }}
+              className="input-field h-9 text-xs"
+              title="End Date"
+            />
+          </div>
 
           {/* Work Type */}
-          <select value={workTypeFilter} onChange={e => setWorkTypeFilter(e.target.value)} className="input-field h-9 text-xs w-auto min-w-[140px]">
+          <select value={workType}
+            onChange={e => {
+              setPage(1);
+              setFilters(prev => ({
+                ...prev,
+                workType: e.target.value
+              }))
+            }}
+            className="input-field h-9 text-xs w-auto min-w-[140px]">
             <option value="">All Work Types</option>
             {WORK_TYPES.map(w => <option key={w} value={w}>{w}</option>)}
           </select>
 
           {/* Priority */}
-          <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)} className="input-field h-9 text-xs w-auto min-w-[130px]">
+          <select value={priority}
+            onChange={e => {
+              setPage(1);
+              setFilters(prev => ({
+                ...prev,
+                priority: e.target.value
+              }))
+            }}
+            className="input-field h-9 text-xs w-auto min-w-[130px]">
             <option value="">All Priorities</option>
             {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
@@ -252,7 +294,7 @@ function confirmDelete() {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {items.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-16 text-gray-400">
                     <Briefcase className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -263,7 +305,7 @@ function confirmDelete() {
                   </td>
                 </tr>
               ) : (
-                filtered.map(item => (
+                items.map(item => (
                   <tr key={item.id} className="border-b border-gray-50 table-row-hover transition-colors">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
@@ -310,16 +352,16 @@ function confirmDelete() {
             </tbody>
           </table>
         </div>
-        {filtered.length > 0 && (
+        {items.length > 0 && (
           <div className="px-5 py-3 bg-gray-50/60 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-xs text-gray-400">{filtered.length} item{filtered.length !== 1 ? 's' : ''}</span>
+            <span className="text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</span>
           </div>
         )}
       </div>
 
       {/* Card grid – Mobile */}
       <div className="md:hidden space-y-3">
-        {filtered.length === 0 ? (
+        {items.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <Briefcase className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <div className="font-medium">No work items found</div>
@@ -328,7 +370,7 @@ function confirmDelete() {
             </div>
           </div>
         ) : (
-          filtered.map(item => (
+          items.map(item => (
             <CustomerCard
               key={item.id}
               item={item}
@@ -338,6 +380,34 @@ function confirmDelete() {
             />
           ))
         )}
+      </div>
+
+      <div className="flex justify-between items-center px-5 py-4 border-t">
+        <div className="text-sm text-gray-500">
+          Total Records: {totalRows}
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            className="px-4 py-2 border rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          <span className="px-4 py-2">
+            Page {page}
+          </span>
+
+          <button
+            disabled={page * 10 >= totalRows}
+            onClick={() => setPage(page + 1)}
+            className="px-4 py-2 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {/* Modals */}

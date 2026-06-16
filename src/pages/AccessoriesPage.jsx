@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Plus, Trash2, Package, Search, X, Calendar, Tag, IndianRupee, Eye, Pencil, AlertTriangle } from 'lucide-react';
-import { WORK_TYPES, formatDate, formatCurrency, generateId, today } from '../utils/constants';
+import { WORK_TYPES, formatDate, formatCurrency, today } from '../utils/constants';
 import AccessoryViewModal from '../components/AccessoryViewModal';
 
 /* ── Add Product Modal ───────────────────────────────────────────── */
@@ -28,7 +28,10 @@ function AddProductModal({ open, onClose, onSave, editItem }) {
   function handleSubmit(e) {
     e.preventDefault();
     if (!form.productName.trim()) return;
-    onSave({ ...form, id: editItem?.id || generateId() });
+    onSave({
+      ...form,
+      id: editItem?.id
+    });
     setForm({ workType: '', buyDate: today(), productName: '', amount: '' });
     onClose();
   }
@@ -192,30 +195,37 @@ function AccessoryCard({ item, onView, onEdit, onDelete }) {
 }
 
 /* ── Main Page ───────────────────────────────────────────────────── */
-export default function AccessoriesPage({ accessories, onSave, onDelete }) {
+export default function AccessoriesPage({ accessories, onSave, onDelete, filters, setFilters, page, setPage, totalRows }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [viewItem, setViewItem] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ open: false, item: null });
 
-  const [workTypeFilter, setWorkTypeFilter] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [nameFilter, setNameFilter] = useState('');
+  // const [workTypeFilter, setWorkTypeFilter] = useState('');
+  // const [startDate, setStartDate] = useState('');
+  // const [endDate, setEndDate] = useState('');
+  // const [nameFilter, setNameFilter] = useState('');
 
-  const filtered = useMemo(() => {
-    return accessories.filter(a => {
-      if (workTypeFilter && a.workType !== workTypeFilter) return false;
-      if (startDate && a.buyDate < startDate) return false;
-      if (endDate && a.buyDate > endDate) return false;
-      if (nameFilter && !a.productName?.toLowerCase().includes(nameFilter.toLowerCase())) return false;
-      return true;
-    });
-  }, [accessories, workTypeFilter, startDate, endDate, nameFilter]);
+  // const accessories = useMemo(() => {
+  //   return accessories.filter(a => {
+  //     if (workTypeFilter && a.workType !== workTypeFilter) return false;
+  //     if (startDate && a.buyDate < startDate) return false;
+  //     if (endDate && a.buyDate > endDate) return false;
+  //     if (nameFilter && !a.productName?.toLowerCase().includes(nameFilter.toLowerCase())) return false;
+  //     return true;
+  //   });
+  // }, [accessories, workTypeFilter, startDate, endDate, nameFilter]);
 
-  const filteredTotal = filtered.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
-  const hasFilters = workTypeFilter || startDate || endDate || nameFilter;
+  const {
+    workType,
+    name,
+    startDate,
+    endDate
+  } = filters;
+
+  const filteredTotal = accessories.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
+  const hasFilters = workType || startDate || endDate || name;
 
   function askDelete(item) {
     setDeleteModal({ open: true, item });
@@ -238,31 +248,73 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
         </button>
       </div>
 
-      {/* Filters + filtered total */}
+      {/* Filters + accessories total */}
       <div className="card p-4 mb-4">
         <div className="flex flex-wrap gap-2 items-center">
           <select
-            value={workTypeFilter} onChange={e => setWorkTypeFilter(e.target.value)}
+            value={workType}
+            onChange={(e) => {
+
+              setPage(1);
+
+              setFilters(prev => ({
+                ...prev,
+                workType: e.target.value
+              }));
+
+            }}
             className="input-field h-9 text-xs w-auto min-w-[150px]"
           >
             <option value="">All Work Types</option>
             {WORK_TYPES.map(w => <option key={w} value={w}>{w}</option>)}
           </select>
 
-          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="input-field h-9 text-xs w-auto" />
-          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="input-field h-9 text-xs w-auto" />
+          <input type="date" value={startDate}
+            onChange={(e) => {
+
+              setPage(1);
+
+              setFilters(prev => ({
+                ...prev,
+                startDate: e.target.value
+              }));
+
+            }}
+            className="input-field h-9 text-xs w-auto" />
+          <input type="date" value={endDate}
+            onChange={(e) => {
+
+              setPage(1);
+
+              setFilters(prev => ({
+                ...prev,
+                endDate: e.target.value
+              }));
+
+            }}
+            className="input-field h-9 text-xs w-auto" />
 
           <div className="relative flex-1 min-w-[160px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             <input
-              type="text" value={nameFilter} onChange={e => setNameFilter(e.target.value)}
+              type="text" value={name}
+              onChange={(e) => {
+
+                setPage(1);
+
+                setFilters(prev => ({
+                  ...prev,
+                  name: e.target.value
+                }));
+
+              }}
               placeholder="Search product..." className="input-field pl-9 h-9 text-xs"
             />
           </div>
 
           {hasFilters && (
             <button
-              onClick={() => { setWorkTypeFilter(''); setNameFilter(''); setStartDate(''); setEndDate(''); }}
+              onClick={() => { setFilters({ ...filters, workType: '', name: '', startDate: '', endDate: '' }); setPage(1); }}
               className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
             >
               <X className="w-3.5 h-3.5" /> Clear
@@ -290,7 +342,7 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
               </tr>
             </thead>
             <tbody>
-              {filtered.length === 0 ? (
+              {accessories.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-16 text-gray-400">
                     <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
@@ -299,7 +351,7 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
                   </td>
                 </tr>
               ) : (
-                filtered.map(item => (
+                accessories.map(item => (
                   <tr key={item.id} className="border-b border-gray-50 table-row-hover transition-colors">
                     <td className="px-5 py-4"><span className="text-sm text-gray-600">{formatDate(item.buyDate)}</span></td>
                     <td className="px-5 py-4">
@@ -345,10 +397,10 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
                 ))
               )}
             </tbody>
-            {filtered.length > 0 && (
+            {accessories.length > 0 && (
               <tfoot>
                 <tr className="bg-gray-50 border-t border-gray-100">
-                  <td colSpan={3} className="px-5 py-3 text-xs text-gray-400">{filtered.length} item{filtered.length !== 1 ? 's' : ''}</td>
+                  <td colSpan={3} className="px-5 py-3 text-xs text-gray-400">{accessories.length} item{accessories.length !== 1 ? 's' : ''}</td>
                   <td className="px-5 py-3 text-right"><span className="text-sm font-bold text-navy-900">{formatCurrency(filteredTotal)}</span></td>
                   <td />
                 </tr>
@@ -360,7 +412,7 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
 
       {/* Mobile Card Grid */}
       <div className="md:hidden space-y-3">
-        {filtered.length === 0 ? (
+        {accessories.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
             <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <div className="font-medium">No accessories found</div>
@@ -368,7 +420,7 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
           </div>
         ) : (
           <>
-            {filtered.map(item => (
+            {accessories.map(item => (
               <AccessoryCard
                 key={item.id}
                 item={item}
@@ -385,11 +437,43 @@ export default function AccessoriesPage({ accessories, onSave, onDelete }) {
             ))}
             {/* Mobile total footer */}
             <div className="card px-4 py-3 flex items-center justify-between">
-              <span className="text-xs text-gray-400">{filtered.length} item{filtered.length !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-gray-400">{accessories.length} item{accessories.length !== 1 ? 's' : ''}</span>
               <span className="font-display font-bold text-navy-900">{formatCurrency(filteredTotal)}</span>
             </div>
           </>
         )}
+      </div>
+
+      <div className="flex justify-between items-center px-5 py-4 border-t">
+
+        <div className="text-sm text-gray-500">
+          Total Records: {totalRows}
+        </div>
+
+        <div className="flex gap-2">
+
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            className="px-4 py-2 border rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          <span className="px-4 py-2">
+            Page {page}
+          </span>
+
+          <button
+            disabled={page * 10 >= totalRows}
+            onClick={() => setPage(page + 1)}
+            className="px-4 py-2 border rounded disabled:opacity-50"
+          >
+           Next
+          </button>
+
+        </div>
+
       </div>
 
       {/* Modals */}

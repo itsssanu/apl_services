@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Search } from 'lucide-react';
-import { WORK_TYPES, STATUSES, PRIORITIES, today, generateId } from '../utils/constants';
+import { WORK_TYPES, STATUSES, PRIORITIES, today } from '../utils/constants';
 
 const defaultForm = {
   name: '',
@@ -13,17 +13,16 @@ const defaultForm = {
   priority: 'No Priority',
   dueDate: '',
   reminder: '',
-  totalAmount: '',
-  advance: '',
-  balance: '',
+  serviceAmount: 0,
+  servicePaid: 0,
+  serviceBalance: 0,
+
+  accessoriesAmount: 0,
+  accessoriesPaid: 0,
+  accessoriesBalance: 0,
 
   // Accessories
-  accessories: [
-    {
-      name: '',
-      amount: '',
-    },
-  ],
+  accessories: [],
 };
 
 export default function WorkItemModal({ open, onClose, onSave, editItem }) {
@@ -52,69 +51,96 @@ export default function WorkItemModal({ open, onClose, onSave, editItem }) {
     w.toLowerCase().includes(workTypeSearch.toLowerCase())
   );
 
-function handleChange(e) {
-  const { name, value } = e.target;
+  function calculateAmounts(form) {
 
-  setForm(prev => {
-    const updated = { ...prev, [name]: value };
+    const accessoriesAmount = form.accessories.reduce(
+      (sum, item) => sum + (parseFloat(item.amount) || 0),
+      0
+    );
 
-    if (name === 'totalAmount' || name === 'advance') {
-      const total =
-        parseFloat(
-          name === 'totalAmount'
-            ? value
-            : prev.totalAmount
-        ) || 0;
+    const accessoriesPaid = parseFloat(form.accessoriesPaid) || 0;
 
-      const accessoriesTotal =
-        prev.accessories.reduce(
-          (sum, item) =>
-            sum + (parseFloat(item.amount) || 0),
-          0
-        );
+    const serviceAmount = parseFloat(form.serviceAmount) || 0;
 
-      const billAmount = total + accessoriesTotal;
+    const servicePaid = parseFloat(form.servicePaid) || 0;
 
-      const advance =
-  parseFloat(
-    name === 'advance'
-      ? value
-      : prev.advance
-  ) || 0;
+    return {
 
-updated.balance = (billAmount - advance).toString();
-    }
+      accessoriesAmount,
 
-    return updated;
-  });
-}
+      accessoriesPaid,
+
+      accessoriesBalance: Math.max(
+        accessoriesAmount - accessoriesPaid,
+        0
+      ),
+
+      serviceBalance: Math.max(
+        serviceAmount - servicePaid,
+        0
+      )
+
+    };
+  }
+
+  function handleChange(e) {
+
+    const { name, value } = e.target;
+
+    setForm(prev => {
+
+      const updated = {
+
+        ...prev,
+
+        [name]: value
+
+      };
+
+      return {
+
+        ...updated,
+
+        ...calculateAmounts(updated)
+
+      };
+
+    });
+
+  }
 
   function handleAccessoryChange(index, field, value) {
+
     setForm(prev => {
+
       const accessories = [...prev.accessories];
 
       accessories[index] = {
+
         ...accessories[index],
-        [field]: value,
+
+        [field]: value
+
       };
 
-      const totalAmount = parseFloat(prev.totalAmount) || 0;
+      const updated = {
 
-      const accessoriesTotal = accessories.reduce(
-        (sum, item) => sum + (parseFloat(item.amount) || 0),
-        0
-      );
+        ...prev,
 
-      const billAmount = totalAmount + accessoriesTotal;
+        accessories
 
-      const advance = parseFloat(prev.advance) || 0;
+      };
 
-return {
-  ...prev,
-  accessories,
-  balance: (billAmount - advance).toString(),
-};
+      return {
+
+        ...updated,
+
+        ...calculateAmounts(updated)
+
+      };
+
     });
+
   }
 
   function addAccessory() {
@@ -131,28 +157,27 @@ return {
   }
 
   function removeAccessory(index) {
+
     setForm(prev => {
-      const accessories = prev.accessories.filter(
-        (_, i) => i !== index
-      );
 
-      const totalAmount = parseFloat(prev.totalAmount) || 0;
+      const updated = {
 
-      const accessoriesTotal = accessories.reduce(
-        (sum, item) => sum + (parseFloat(item.amount) || 0),
-        0
-      );
+        ...prev,
 
-      const billAmount = totalAmount + accessoriesTotal;
+        accessories: prev.accessories.filter((_, i) => i !== index)
 
-     const advance = parseFloat(prev.advance) || 0;
+      };
 
-return {
-  ...prev,
-  accessories,
-  balance: (billAmount - advance).toString(),
-};
+      return {
+
+        ...updated,
+
+        ...calculateAmounts(updated)
+
+      };
+
     });
+
   }
 
   function handleSubmit(e) {
@@ -161,9 +186,10 @@ return {
       alert('Please fill in Customer Name.');
       return;
     }
+    console.log("Saving Item", form);
     const item = {
       ...form,
-      id: editItem?.id || generateId(),
+      id: editItem?.id,
       createdAt: editItem?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -410,56 +436,84 @@ return {
             <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
               Financial Details
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="mb-4 p-3 bg-white rounded-xl border">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">
-                    Accessories Total
-                  </span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-blue-50 rounded-xl p-4 space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-5">
+                  Accessories
+                </h3>
 
-                  <span className="font-semibold">
-                    ₹{accessoriesTotal}
-                  </span>
+                <div> <label className="label">Accessories Total</label>
+                  <div className="mb-4 p-3 bg-white rounded-xl border">
+                    <div className="flex justify-between">
+                      <span className="font-semibold">
+                        ₹{accessoriesTotal}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="label"> Accessories Paid</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
+                    <input
+                      type="number"
+                      name="accessoriesPaid"
+                      value={form.accessoriesPaid}
+                      onChange={handleChange}
+                      className="input-field  pl-7"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Accessories Balance</label>
+                    <input
+                      value={form.accessoriesBalance}
+                      readOnly
+                      className="input-field bg-gray-100"
+                    />
                 </div>
               </div>
-              <div>
-                <label className="label">Total Amount</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
-                  <input
-                    type="number"
-                    name="totalAmount"
-                    value={form.totalAmount}
-                    onChange={handleChange}
-                    placeholder="0"
-                    className="input-field pl-7"
-                  />
+
+              <div className="bg-blue-50 rounded-xl p-4 space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-5">
+                  Service
+                </h3>
+                <div>
+                  <label className="label">Service Amount</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
+                    <input
+                      type="number"
+                      name="serviceAmount"
+                      value={form.serviceAmount}
+                      onChange={handleChange}
+                      className="input-field  pl-7"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="label">Advance</label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
-                  <input
-                    type="number"
-                    name="advance"
-                    value={form.advance}
-                    onChange={handleChange}
-                    placeholder="0"
-                    className="input-field pl-7"
-                  />
+
+                <div>
+                  <label className="label">Service Paid</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
+                    <input
+                      type="number"
+                      name="servicePaid"
+                      value={form.servicePaid}
+                      onChange={handleChange}
+                      placeholder="0"
+                      className="input-field pl-7"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="label">Balance</label>
-                <div className="relative">
+
+                <div>
+                  <label className="label">Service Balance</label>
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
                   <input
-                    type="number"
-                    name="balance"
-                    value={form.balance}
+                    value={form.serviceBalance}
                     readOnly
-                    className="input-field pl-7 bg-gray-100 cursor-not-allowed"
+                    className="input-field bg-gray-100"
                   />
                 </div>
               </div>

@@ -7,11 +7,12 @@ export default function ViewModal({ open, onClose, item }) {
   const statusClass = STATUS_STYLES[item.status] || 'badge-new';
   const priorityClass = PRIORITY_STYLES[item.priority] || 'priority-none';
   const accessoriesTotal =
-  item.accessories?.reduce(
-    (sum, accessory) =>
-      sum + (parseFloat(accessory.amount) || 0),
-    0
-  ) || 0;
+    item.accessories?.reduce(
+      (sum, accessory) =>
+        sum + (parseFloat(accessory.amount) || 0),
+      0
+    ) || 0;
+  console.log("item view", item);
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -55,88 +56,115 @@ export default function ViewModal({ open, onClose, item }) {
           )}
 
           {item.accessories?.some(a => a.name || a.amount) && (
-  <div className="bg-blue-50 rounded-xl p-4">
-    <div className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-3">
-      Accessories
-    </div>
+            <div className="bg-blue-50 rounded-xl p-4">
+              <div className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-3">
+                Accessories Products
+              </div>
 
-    <div className="space-y-2">
-      {item.accessories.map((accessory, index) => (
-        <div
-          key={index}
-          className="flex items-center justify-between bg-white rounded-lg px-3 py-2"
-        >
-          <span className="text-sm text-gray-700">
-            {accessory.name || 'Unnamed Product'}
-          </span>
+              <div className="space-y-2">
+                {item.accessories.map((accessory, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between bg-white rounded-lg px-3 py-2"
+                  >
+                    <span className="text-sm text-gray-700">
+                      {accessory.name || 'Unnamed Product'}
+                    </span>
 
-          <span className="font-medium text-gray-900">
-            {formatCurrency(accessory.amount)}
-          </span>
-        </div>
-      ))}
-    </div>
+                    <span className="font-medium text-gray-900">
+                      {formatCurrency(accessory.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
 
-    <div className="mt-3 pt-3 border-t border-blue-200 flex justify-between">
-      <span className="text-sm font-medium text-gray-600">
-        Accessories Total
-      </span>
+              <div className="mt-3 pt-3 border-t border-blue-200 flex justify-between">
+                <span className="text-sm font-medium text-gray-600">
+                  Accessories Total
+                </span>
 
-      <span className="font-semibold text-blue-700">
-        {formatCurrency(accessoriesTotal)}
-      </span>
-    </div>
-  </div>
-)}
+                <span className="font-semibold text-blue-700">
+                  {formatCurrency(accessoriesTotal)}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Financial summary */}
-         {(item.totalAmount || item.advance || item.balance) && (
-  <div className="bg-navy-950 rounded-xl p-4 text-white">
-    <div className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-3">
-      Financial Details
-    </div>
+          {(
+            item.serviceAmount ||
+            item.servicePaid ||
+            item.serviceBalance ||
+            accessoriesTotal ||
+            item.accessoriesPaid ||
+            item.accessoriesBalance
+          ) && (
 
-    <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-      <div className="bg-white/5 rounded-lg p-3">
-        <div className="text-white/50 text-xs">
-          Service Amount
-        </div>
-        <div className="font-semibold mt-1">
-          {formatCurrency(item.totalAmount)}
-        </div>
-      </div>
+                {/* Accessories */}
 
-      <div className="bg-white/5 rounded-lg p-3">
-        <div className="text-white/50 text-xs">
-          Accessories Total
-        </div>
-        <div className="font-semibold mt-1">
-          {formatCurrency(accessoriesTotal)}
-        </div>
-      </div>
+                <div className="bg-blue-50 rounded-xl p-4">
 
-      <div className="bg-white/5 rounded-lg p-3">
-        <div className="text-white/50 text-xs">
-          Advance Paid
-        </div>
-        <div className="font-semibold text-green-400 mt-1">
-          {formatCurrency(item.advance)}
-        </div>
-      </div>
+                  <h3 className="font-semibold text-blue-700 mb-4">
+                    Accessories Details
+                  </h3>
 
-      <div className="bg-white/5 rounded-lg p-3">
-        <div className="text-white/50 text-xs">
-          Balance
-        </div>
-        <div className="font-semibold text-amber-400 mt-1">
-          {formatCurrency(item.balance)}
-        </div>
-      </div>
+                  <div className="space-y-3">
 
-    </div>
-  </div>
-)}
+                    <InfoRow
+                      label="Total Amount"
+                      value={formatCurrency(accessoriesTotal)}
+                    />
+
+                    <InfoRow
+                      label="Paid"
+                      value={formatCurrency(item.accessoriesPaid)}
+                    />
+
+                    <InfoRow
+                      label="Balance"
+                      value={formatCurrency(item.accessoriesBalance)}
+                      highlight
+                    />
+
+                  </div>
+
+                </div>
+
+                {/* Service */}
+
+                <div className="bg-green-50 rounded-xl p-4">
+
+                  <h3 className="font-semibold text-green-700 mb-4">
+                    Service Details
+                  </h3>
+
+                  <div className="space-y-3">
+
+                    <InfoRow
+                      label="Service Amount"
+                      value={formatCurrency(item.serviceAmount)}
+                    />
+
+                    <InfoRow
+                      label="Paid"
+                      value={formatCurrency(item.servicePaid)}
+                    />
+
+                    <InfoRow
+                      label="Balance"
+                      value={formatCurrency(item.serviceBalance)}
+                      highlight
+                    />
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            )}
         </div>
 
         <div className="px-6 pb-6 flex justify-end">
@@ -157,4 +185,30 @@ function DetailItem({ icon: Icon, label, value }) {
       <div className="text-sm font-medium text-gray-800">{value}</div>
     </div>
   );
+}
+
+function InfoRow({ label, value, highlight = false }) {
+
+  return (
+
+    <div className="flex justify-between items-center bg-white rounded-lg px-3 py-3">
+
+      <span className="text-sm text-gray-600">
+        {label}
+      </span>
+
+      <span
+        className={`font-semibold ${
+          highlight
+            ? "text-red-600"
+            : "text-gray-900"
+        }`}
+      >
+        {value}
+      </span>
+
+    </div>
+
+  );
+
 }
