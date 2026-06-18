@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Plus, Trash2, Package, Search, X, Calendar, Tag, IndianRupee, Eye, Pencil, AlertTriangle } from 'lucide-react';
-import { WORK_TYPES, formatDate, formatCurrency, today } from '../utils/constants';
+import { Plus, Trash2, Package, Search, X, Calendar, Tag, IndianRupee, Eye, Pencil, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { WORK_TYPES, formatDate, formatCurrency, today, MONTHS, YEARS, getCurrentMonthYear, getMonthDateRange } from "../utils/constants";
 import AccessoryViewModal from '../components/AccessoryViewModal';
 
 /* ── Add Product Modal ───────────────────────────────────────────── */
@@ -202,30 +202,72 @@ export default function AccessoriesPage({ accessories, onSave, onDelete, filters
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ open: false, item: null });
 
-  // const [workTypeFilter, setWorkTypeFilter] = useState('');
-  // const [startDate, setStartDate] = useState('');
-  // const [endDate, setEndDate] = useState('');
-  // const [nameFilter, setNameFilter] = useState('');
-
-  // const accessories = useMemo(() => {
-  //   return accessories.filter(a => {
-  //     if (workTypeFilter && a.workType !== workTypeFilter) return false;
-  //     if (startDate && a.buyDate < startDate) return false;
-  //     if (endDate && a.buyDate > endDate) return false;
-  //     if (nameFilter && !a.productName?.toLowerCase().includes(nameFilter.toLowerCase())) return false;
-  //     return true;
-  //   });
-  // }, [accessories, workTypeFilter, startDate, endDate, nameFilter]);
-
   const {
     workType,
     name,
+    month,
+    year,
     startDate,
     endDate
   } = filters;
 
+  function updateMonth(month) {
+    const range = getMonthDateRange(
+      month,
+      filters.year
+    );
+
+    setPage(1);
+
+    setFilters(prev => ({
+      ...prev,
+      month,
+      startDate: range.startDate,
+      endDate: range.endDate
+    }));
+  }
+
+  function updateYear(year) {
+    const range = getMonthDateRange(
+      filters.month,
+      year
+    );
+
+    setPage(1);
+
+    setFilters(prev => ({
+      ...prev,
+      year,
+      startDate: range.startDate,
+      endDate: range.endDate
+    }));
+  }
+  const customDateSelected = (() => {
+
+    if (!filters.month || !filters.year)
+      return true;
+
+    const range = getMonthDateRange(
+      filters.month,
+      filters.year
+    );
+
+    return (
+      range.startDate !== filters.startDate ||
+      range.endDate !== filters.endDate
+    );
+
+  })();
+  const isCustomRange = customDateSelected;
   const filteredTotal = accessories.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
-  const hasFilters = workType || startDate || endDate || name;
+  const current = getCurrentMonthYear();
+
+  const defaultRange = getMonthDateRange(
+    current.month,
+    current.year
+  );
+
+  const hasFilters = workType || name || month !== current.month || year !== current.year || customDateSelected
 
   function askDelete(item) {
     setDeleteModal({ open: true, item });
@@ -233,6 +275,24 @@ export default function AccessoriesPage({ accessories, onSave, onDelete, filters
   function confirmDelete() {
     onDelete(deleteModal.item.id);
     setDeleteModal({ open: false, item: null });
+  }
+
+  function clearFilters() {
+    const current = getCurrentMonthYear();
+
+    const range = getMonthDateRange(
+      current.month,
+      current.year
+    );
+    setFilters({
+      workType: "",
+      name: "",
+      month: current.month,
+      year: current.year,
+      startDate: range.startDate,
+      endDate: range.endDate
+    });
+    setPage(1);
   }
 
   return (
@@ -269,28 +329,68 @@ export default function AccessoriesPage({ accessories, onSave, onDelete, filters
             {WORK_TYPES.map(w => <option key={w} value={w}>{w}</option>)}
           </select>
 
+          <select
+            disabled={isCustomRange}
+            value={customDateSelected ? "" : month}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              updateMonth(Number(e.target.value));
+            }}
+            className="input-field h-9 text-xs min-w-[130px]">
+            <option value="">
+              Custom
+            </option>
+            {MONTHS.map(m => (
+              <option
+                key={m.value}
+                value={m.value}
+              >
+                {m.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            disabled={isCustomRange}
+            value={customDateSelected ? "" : year}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              updateYear(Number(e.target.value));
+            }}
+            className="input-field h-9 text-xs min-w-[110px]">
+            <option value="">
+              —
+            </option>
+            {YEARS.map(y => (
+              <option
+                key={y}
+                value={y}
+              >
+                {y}
+              </option>
+            ))}
+          </select>
+
           <input type="date" value={startDate}
             onChange={(e) => {
-
               setPage(1);
-
               setFilters(prev => ({
                 ...prev,
-                startDate: e.target.value
+                startDate: e.target.value,
+                month: "",
+                year: ""
               }));
-
             }}
             className="input-field h-9 text-xs w-auto" />
           <input type="date" value={endDate}
             onChange={(e) => {
-
               setPage(1);
-
               setFilters(prev => ({
                 ...prev,
-                endDate: e.target.value
+                endDate: e.target.value,
+                month: "",
+                year: ""
               }));
-
             }}
             className="input-field h-9 text-xs w-auto" />
 
@@ -314,7 +414,7 @@ export default function AccessoriesPage({ accessories, onSave, onDelete, filters
 
           {hasFilters && (
             <button
-              onClick={() => { setFilters({ ...filters, workType: '', name: '', startDate: '', endDate: '' }); setPage(1); }}
+              onClick={clearFilters}
               className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
             >
               <X className="w-3.5 h-3.5" /> Clear
@@ -444,36 +544,34 @@ export default function AccessoriesPage({ accessories, onSave, onDelete, filters
         )}
       </div>
 
-      <div className="flex justify-between items-center px-5 py-4 border-t">
+      <div className="flex items-center justify-between px-4 py-4 border-t">
+        <span className="text-sm text-gray-500">
+          Total: {totalRows}
+        </span>
 
-        <div className="text-sm text-gray-500">
-          Total Records: {totalRows}
-        </div>
-
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
 
           <button
             disabled={page === 1}
             onClick={() => setPage(page - 1)}
-            className="px-4 py-2 border rounded disabled:opacity-50"
+            className="w-9 h-9 rounded-full border flex items-center justify-center disabled:opacity-40 hover:bg-gray-100"
           >
-            Previous
+            <ChevronLeft size={18} />
           </button>
 
-          <span className="px-4 py-2">
-            Page {page}
+          <span className="text-sm font-semibold min-w-[60px] text-center">
+            {page}
           </span>
 
           <button
             disabled={page * 10 >= totalRows}
             onClick={() => setPage(page + 1)}
-            className="px-4 py-2 border rounded disabled:opacity-50"
+            className="w-9 h-9 rounded-full border flex items-center justify-center disabled:opacity-40 hover:bg-gray-100"
           >
-           Next
+            <ChevronRight size={18} />
           </button>
 
         </div>
-
       </div>
 
       {/* Modals */}

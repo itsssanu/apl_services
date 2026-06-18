@@ -12,18 +12,29 @@ import {
 } from './services/workService';
 import { getAccessories, createAccessory, updateAccessory, deleteAccessory } from './services/accessoryService';
 import { getAmountSummary } from './services/amountService';
+import { getCurrentMonthYear, getMonthDateRange } from './utils/constants';
 
 export default function App() {
   const [activePage, setActivePage] = useState('customers');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const current = getCurrentMonthYear();
+
+  const range = getMonthDateRange(
+    current.month,
+    current.year
+  );
 
   const [filters, setFilters] = useState({
     name: "",
     status: "",
     workType: "",
     priority: "",
-    startDate: "",
-    endDate: "",
+    month: current.month,
+    year: current.year,
+    startDate: range.startDate,
+    endDate: range.endDate
+
   });
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
@@ -35,8 +46,10 @@ export default function App() {
   const [accessoryFilters, setAccessoryFilters] = useState({
     workType: "",
     name: "",
-    startDate: "",
-    endDate: ""
+    month: current.month,
+    year: current.year,
+    startDate: range.startDate,
+    endDate: range.endDate
   });
 
   const [accessories, setAccessories] = useState([]);
@@ -47,8 +60,10 @@ export default function App() {
 
   const [amountFilters, setAmountFilters] = useState({
     name: "",
-    startDate: "",
-    endDate: ""
+    month: current.month,
+    year: current.year,
+    startDate: range.startDate,
+    endDate: range.endDate
   });
 
   const [amountPage, setAmountPage] = useState(1);
@@ -66,8 +81,10 @@ export default function App() {
   }, [accessoryFilters, accessoryPage]);
 
   useEffect(() => {
+  if (activePage === "amount") {
     loadAmount();
-  }, [amountFilters, amountPage]);
+  }
+}, [activePage, amountFilters, amountPage]);
 
   async function loadWorkItems() {
     try {
@@ -179,17 +196,17 @@ export default function App() {
     setAmountTotalRows(result.count);
 
     setAmountRows(
-      result.data.map(item => ({
-        name: item.name,
-        jobs: Number(item.jobs),
+  result.data.map(item => ({
+    id: item.id,
+    name: item.name,
 
-        serviceAmount: Number(item.service_amount),
-        servicePaid: Number(item.service_paid),
-        serviceBalance: Number(item.service_balance),
+    serviceAmount: Number(item.service_amount),
+    servicePaid: Number(item.service_paid),
+    serviceBalance: Number(item.service_balance),
 
-        latestDate: item.latest_date
-      }))
-    );
+    latestDate: item.work_date
+  }))
+);
 
   }
 

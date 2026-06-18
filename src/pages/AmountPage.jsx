@@ -1,6 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Search, X, Wallet, TrendingUp, AlertCircle, Users } from 'lucide-react';
+import { Search, X, Wallet, TrendingUp, AlertCircle, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '../utils/constants';
+import {
+  MONTHS,
+  YEARS,
+  getCurrentMonthYear,
+  getMonthDateRange
+} from "../utils/constants";
 
 function SummaryCard({ label, value, type, icon: Icon }) {
   const styles = {
@@ -25,15 +31,93 @@ function SummaryCard({ label, value, type, icon: Icon }) {
 export default function AmountPage({ amountSummary, filters, setFilters, page, setPage, totalRows }) {
   const {
     name,
+    month,
+    year,
     startDate,
     endDate
   } = filters;
 
+  console.log("amountSummary", amountSummary);
+
+
+  function updateMonth(month) {
+
+    const range = getMonthDateRange(
+      month,
+      filters.year
+    );
+
+    setPage(1);
+
+    setFilters(prev => ({
+      ...prev,
+      month,
+      startDate: range.startDate,
+      endDate: range.endDate
+    }));
+  }
+  function updateYear(year) {
+
+    const range = getMonthDateRange(
+      filters.month,
+      year
+    );
+
+    setPage(1);
+
+    setFilters(prev => ({
+      ...prev,
+      year,
+      startDate: range.startDate,
+      endDate: range.endDate
+    }));
+  }
+
+  const customDateSelected = (() => {
+
+    if (!filters.month || !filters.year)
+      return true;
+
+    const range = getMonthDateRange(
+      filters.month,
+      filters.year
+    );
+
+    return (
+      range.startDate !== filters.startDate ||
+      range.endDate !== filters.endDate
+    );
+
+  })();
+
+  const isCustomRange = customDateSelected;
+
   const overallService = amountSummary.reduce((s, c) => s + c.serviceAmount, 0);
   const overallPaid = amountSummary.reduce((s, c) => s + c.servicePaid, 0);
   const overallBalance = amountSummary.reduce((s, c) => s + c.serviceBalance, 0);
+  const current = getCurrentMonthYear();
 
-  const hasFilters = name || startDate || endDate;
+  function clearFilters() {
+    const current = getCurrentMonthYear();
+
+    const range = getMonthDateRange(
+      current.month,
+      current.year
+    );
+    setFilters({
+      name: "",
+      status: "",
+      workType: "",
+      priority: "",
+      month: current.month,
+      year: current.year,
+      startDate: range.startDate,
+      endDate: range.endDate
+    });
+    setPage(1);
+  }
+
+  const hasFilters = name || month !== current.month || year !== current.year || customDateSelected;
 
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto">
@@ -63,6 +147,65 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
               className="input-field pl-9 h-9 text-xs"
             />
           </div>
+          <select
+            disabled={isCustomRange}
+            value={customDateSelected ? "" : month}
+            onChange={(e) => {
+
+              if (!e.target.value) return;
+
+              updateMonth(Number(e.target.value));
+
+            }}
+            className="input-field h-9 text-xs min-w-[130px]"
+          >
+
+            <option value="">
+              Custom
+            </option>
+
+            {MONTHS.map(m => (
+
+              <option
+                key={m.value}
+                value={m.value}
+              >
+                {m.label}
+              </option>
+
+            ))}
+
+          </select>
+
+          <select
+            disabled={isCustomRange}
+            value={customDateSelected ? "" : year}
+            onChange={(e) => {
+
+              if (!e.target.value) return;
+
+              updateYear(Number(e.target.value));
+
+            }}
+            className="input-field h-9 text-xs min-w-[110px]"
+          >
+
+            <option value="">
+              —
+            </option>
+
+            {YEARS.map(y => (
+
+              <option
+                key={y}
+                value={y}
+              >
+                {y}
+              </option>
+
+            ))}
+
+          </select>
           <input
             type="date"
             value={startDate}
@@ -71,7 +214,9 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
 
               setFilters(prev => ({
                 ...prev,
-                startDate: e.target.value
+                startDate: e.target.value,
+                month: "",
+                year: ""
               }));
             }}
             className="input-field h-9 text-xs w-auto"
@@ -87,24 +232,18 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
 
               setFilters(prev => ({
                 ...prev,
-                endDate: e.target.value
+                endDate: e.target.value,
+                month: "",
+                year: ""
               }));
             }} className="input-field h-9 text-xs w-auto"
             title="End Date"
           />
           {hasFilters && (
             <button
-              onClick={() => {
-                setFilters({
-                  name: "",
-                  startDate: "",
-                  endDate: ""
-                });
-
-                setPage(1);
-              }} className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
+              onClick={clearFilters} className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-medium text-red-500 hover:bg-red-50 transition-colors"
             >
-              <X className="w-3.5 h-3.5" /> Clear Filters
+              <X className="w-3.5 h-3.5" /> Clear
             </button>
           )}
         </div>
@@ -129,7 +268,6 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50/60">
                 <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Customer</th>
-                <th className="text-center px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Jobs</th>
                 <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Service Amount</th>
                 <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Paid</th>
                 <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Balance</th>
@@ -138,14 +276,14 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
             <tbody>
               {amountSummary.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12 text-gray-400">                   
-                     <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <td colSpan={6} className="text-center py-12 text-gray-400">
+                    <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
                     <div className="font-medium">No customers found</div>
                   </td>
                 </tr>
               ) : (
                 amountSummary.map(c => (
-                  <tr key={c.name} className="border-b border-gray-50 table-row-hover transition-colors">
+                  <tr key={c.id} className="border-b border-gray-50 table-row-hover transition-colors">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-navy-900 flex items-center justify-center text-white font-display font-bold text-sm flex-shrink-0">
@@ -156,16 +294,10 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
                           <div className="text-xs text-gray-400">
                             {formatDate(c.latestDate)}
                           </div>
-                          <div className="text-xs text-gray-400">
-                            {c.jobs} job{c.jobs !== 1 ? 's' : ''}
-                          </div>
                         </div>
                       </div>
                     </td>
 
-                    <td className="px-5 py-4 text-center">
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-navy-100 text-navy-700 text-xs font-bold">{c.jobs}</span>
-                    </td>
                     <td className="px-5 py-4 text-right">
                       <span className="text-sm font-semibold text-gray-800">{formatCurrency(c.serviceAmount)}</span>
                     </td>
@@ -182,35 +314,34 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
               )}
             </tbody>
             {amountSummary.length > 0 && (
-              <tfoot>
-                <tr className="bg-navy-950 text-white">
-                  <td className="px-5 py-4 font-semibold text-white/70 text-sm">
-                    Total
-                  </td>
+              <div className="sm:hidden border-t bg-gray-50 px-4 py-4">
+                <div className="text-sm font-semibold text-gray-700 mb-3">
+                  Total
+                </div>
 
-                  <td className="px-5 py-4 text-center">
-                    <span className="text-white/60 text-sm">
-                      {amountSummary.reduce((s, c) => s + c.jobs, 0)}
-                    </span>
-                  </td>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-gray-100 rounded-xl p-3 text-center">
+                    <div className="text-xs text-gray-500">Service</div>
+                    <div className="font-bold text-gray-900">
+                      {formatCurrency(overallService)}
+                    </div>
+                  </div>
 
-                  {/* <td className="px-5 py-4 text-center">
-                    -
-                  </td> */}
+                  <div className="bg-green-50 rounded-xl p-3 text-center">
+                    <div className="text-xs text-green-600">Paid</div>
+                    <div className="font-bold text-green-700">
+                      {formatCurrency(overallPaid)}
+                    </div>
+                  </div>
 
-                  <td className="px-5 py-4 text-right font-display font-bold">
-                    {formatCurrency(overallService)}
-                  </td>
-
-                  <td className="px-5 py-4 text-right font-display font-bold text-green-400">
-                    {formatCurrency(overallPaid)}
-                  </td>
-
-                  <td className="px-5 py-4 text-right font-display font-bold text-amber-400">
-                    {formatCurrency(overallBalance)}
-                  </td>
-                </tr>
-              </tfoot>
+                  <div className="bg-red-50 rounded-xl p-3 text-center">
+                    <div className="text-xs text-red-500">Balance</div>
+                    <div className="font-bold text-red-600">
+                      {formatCurrency(overallBalance)}
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </table>
         </div>
@@ -224,8 +355,8 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
             </div>
           ) : (
             amountSummary.map(c => (
-              <div key={c.name} className="p-4">
-                <div className="flex items-center justify-between mb-3">
+              <div key={c.id} className="p-4">
+                <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-navy-900 flex items-center justify-center text-white font-display font-bold">
                       {c.name.charAt(0).toUpperCase()}
@@ -235,7 +366,6 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
                       <div className="text-xs text-gray-400">
                         {formatDate(c.latestDate)}
                       </div>
-                      <div className="text-xs text-gray-400">{c.jobs} job{c.jobs !== 1 ? 's' : ''}</div>
                     </div>
                   </div>
                   <div className={`font-display font-bold text-lg ${c.serviceBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -261,37 +391,35 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
           )}
         </div>
 
-        <div className="flex justify-between items-center px-5 py-4 border-t">
+        <div className="flex items-center justify-between px-4 py-4 border-t">
+  <span className="text-sm text-gray-500">
+    Total: {totalRows}
+  </span>
 
-          <div className="text-sm text-gray-500">
-            Total Records: {totalRows}
-          </div>
+  <div className="flex items-center gap-2">
 
-          <div className="flex gap-2">
+    <button
+      disabled={page === 1}
+      onClick={() => setPage(page - 1)}
+      className="w-9 h-9 rounded-full border flex items-center justify-center disabled:opacity-40 hover:bg-gray-100"
+    >
+      <ChevronLeft size={18} />
+    </button>
 
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-              className="px-4 py-2 border rounded disabled:opacity-50"
-            >
-              Previous
-            </button>
+    <span className="text-sm font-semibold min-w-[60px] text-center">
+      {page}
+    </span>
 
-            <span className="px-4 py-2">
-              Page {page}
-            </span>
+    <button
+      disabled={page * 10 >= totalRows}
+      onClick={() => setPage(page + 1)}
+      className="w-9 h-9 rounded-full border flex items-center justify-center disabled:opacity-40 hover:bg-gray-100"
+    >
+      <ChevronRight size={18} />
+    </button>
 
-            <button
-              disabled={page * 10 >= totalRows}
-              onClick={() => setPage(page + 1)}
-              className="px-4 py-2 border rounded disabled:opacity-50"
-            >
-              Next
-            </button>
-
-          </div>
-
-        </div>
+  </div>
+</div>
       </div>
     </div>
   );

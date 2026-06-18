@@ -2,13 +2,12 @@ import { useState } from 'react';
 import {
   Plus, Search, Filter, X, Eye, Pencil, Trash2,
   Briefcase, Clock, RefreshCw, CheckCircle2, Phone, MapPin, Calendar, ChevronDown,
-  Sparkles
+  Sparkles, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import {
-  WORK_TYPES, STATUSES, PRIORITIES,
-  STATUS_STYLES, PRIORITY_STYLES, STATUS_DOT, PRIORITY_DOT,
-  formatDate, formatCurrency
-} from '../utils/constants';
+  WORK_TYPES, STATUSES, PRIORITIES, STATUS_STYLES, PRIORITY_STYLES, formatDate, formatCurrency, MONTHS, YEARS,
+  getCurrentMonthYear, getMonthDateRange
+} from "../utils/constants";
 import WorkItemModal from '../components/WorkItemModal';
 import ViewModal from '../components/ViewModal';
 
@@ -40,7 +39,7 @@ function CustomerCard({ item, onView, onEdit, onDelete }) {
   const priorityClass = PRIORITY_STYLES[item.priority] || 'priority-none';
 
   console.log("item", item);
-  
+
   return (
     <div className="card p-4 hover:shadow-card-hover transition-shadow duration-200">
       <div className="flex items-start justify-between mb-3">
@@ -101,26 +100,86 @@ export default function CustomersPage({ items, onSave, onDelete, filters, setFil
     workType,
     priority,
     startDate,
-    endDate
+    endDate,
+    month,
+    year
   } = filters;
+
+  function updateMonth(month) {
+    const range = getMonthDateRange(
+      month,
+      filters.year
+    );
+    setPage(1);
+    setFilters(prev => ({
+      ...prev,
+      month,
+      startDate: range.startDate,
+      endDate: range.endDate
+    }));
+  }
+
+  function updateYear(year) {
+    const range = getMonthDateRange(
+      filters.month,
+      year
+    );
+    setPage(1);
+    setFilters(prev => ({
+      ...prev,
+      year,
+      startDate: range.startDate,
+      endDate: range.endDate
+    }));
+  }
+
+  const customDateSelected = (() => {
+    if (!filters.month || !filters.year)
+      return true;
+    const range = getMonthDateRange(
+      filters.month,
+      filters.year
+    );
+    return (
+      range.startDate !== filters.startDate ||
+      range.endDate !== filters.endDate
+    );
+
+  })();
+
+  const isCustomRange = customDateSelected;
+
   // Stats
   const total = items.length;
   const newwork = items.filter(i => i.status === 'New').length;
   const pending = items.filter(i => i.status === 'Pending').length;
   const inProcess = items.filter(i => i.status === 'InProcess').length;
   const completed = items.filter(i => i.status === 'Completed').length;
+  const current = getCurrentMonthYear();
 
-  const hasFilters = name || status || startDate || endDate || workType || priority;
+  const hasFilters = name || status || workType || priority || month !== current.month || year !== current.year || customDateSelected;
+
+
+
 
   function clearFilters() {
+    const current = getCurrentMonthYear();
+
+    const range = getMonthDateRange(
+      current.month,
+      current.year
+    );
     setFilters({
       name: "",
       status: "",
       workType: "",
       priority: "",
-      startDate: "",
-      endDate: "",
+      month: current.month,
+      year: current.year,
+      startDate: range.startDate,
+      endDate: range.endDate
     });
+    setPage(1);
   }
 
   function handleEdit(item) {
@@ -208,6 +267,52 @@ export default function CustomersPage({ items, onSave, onDelete, filters, setFil
             {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
 
+          {/* Custom Date Range */}
+          <select
+            disabled={isCustomRange}
+            value={customDateSelected ? "" : filters.month}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              updateMonth(Number(e.target.value));
+            }}
+            className="input-field h-9 text-xs w-auto min-w-[130px]">
+
+            <option value="">
+              Custom
+            </option>
+            {MONTHS.map(m => (
+              <option
+                key={m.value}
+                value={m.value}
+              >
+                {m.label}
+              </option>
+            ))
+            }
+          </select>
+
+          <select
+            disabled={isCustomRange}
+            value={customDateSelected ? "" : filters.year}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              updateYear(Number(e.target.value));
+            }}
+            className="input-field h-9 text-xs w-auto min-w-[110px]">
+            <option value="">
+              —
+            </option>
+            {YEARS.map(year => (
+              <option
+                key={year}
+                value={year}
+              >
+                {year}
+              </option>
+            ))
+            }
+          </select>
+
           {/* Date */}
           <div className="flex items-center gap-2">
             <input
@@ -217,7 +322,9 @@ export default function CustomersPage({ items, onSave, onDelete, filters, setFil
                 setPage(1);
                 setFilters(prev => ({
                   ...prev,
-                  startDate: e.target.value
+                  startDate: e.target.value,
+                  month: "",
+                  year: ""
                 }))
               }}
               className="input-field h-9 text-xs"
@@ -233,7 +340,9 @@ export default function CustomersPage({ items, onSave, onDelete, filters, setFil
                 setPage(1);
                 setFilters(prev => ({
                   ...prev,
-                  endDate: e.target.value
+                  endDate: e.target.value,
+                  month: "",
+                  year: ""
                 }))
               }}
               className="input-field h-9 text-xs"
@@ -382,31 +491,33 @@ export default function CustomersPage({ items, onSave, onDelete, filters, setFil
         )}
       </div>
 
-      <div className="flex justify-between items-center px-5 py-4 border-t">
-        <div className="text-sm text-gray-500">
-          Total Records: {totalRows}
-        </div>
+      <div className="flex items-center justify-between px-4 py-4 border-t">
+        <span className="text-sm text-gray-500">
+          Total: {totalRows}
+        </span>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+
           <button
             disabled={page === 1}
             onClick={() => setPage(page - 1)}
-            className="px-4 py-2 border rounded disabled:opacity-50"
+            className="w-9 h-9 rounded-full border flex items-center justify-center disabled:opacity-40 hover:bg-gray-100"
           >
-            Previous
+            <ChevronLeft size={18} />
           </button>
 
-          <span className="px-4 py-2">
-            Page {page}
+          <span className="text-sm font-semibold min-w-[60px] text-center">
+            {page}
           </span>
 
           <button
             disabled={page * 10 >= totalRows}
             onClick={() => setPage(page + 1)}
-            className="px-4 py-2 border rounded disabled:opacity-50"
+            className="w-9 h-9 rounded-full border flex items-center justify-center disabled:opacity-40 hover:bg-gray-100"
           >
-            Next
+            <ChevronRight size={18} />
           </button>
+
         </div>
       </div>
 
