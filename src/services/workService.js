@@ -46,10 +46,15 @@ export async function getWorkItems(filters = {}, page = 1, limit = 20) {
 }
 
 export async function createWorkItem(item) {
+  const {
+  data: { user },
+} = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from('work_items')
     .insert([
       {
+        user_id: user.id,
+
         name: item.name,
         phone: item.phone || null,
         city: item.city || null,
@@ -79,6 +84,9 @@ export async function createWorkItem(item) {
 }
 
 export async function updateWorkItem(id, item) {
+  const {
+  data: { user },
+} = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from('work_items')
     .update({
@@ -101,7 +109,8 @@ export async function updateWorkItem(id, item) {
       accessories_balance: Number(item.accessoriesBalance) || 0,
       accessories: item.accessories
     })
-    .eq('id', id)
+    .eq("id", id)
+.eq("user_id", user.id)
     .select();
 
   if (error) throw error;
@@ -110,47 +119,15 @@ export async function updateWorkItem(id, item) {
 }
 
 export async function deleteWorkItem(id) {
+  const {
+  data: { user },
+} = await supabase.auth.getUser();
   const { error } = await supabase
     .from('work_items')
     .delete()
-    .eq('id', id);
+    .eq("id", id)
+.eq("user_id", user.id)
 
   if (error) throw error;
 }
 
-// export async function getFilteredWorkItems(filters) {
-//   let query = supabase
-//     .from("work_items")
-//     .select("*")
-//     .order("created_at", { ascending: false });
-
-//   if (filters.name) {
-//     query = query.ilike("name", `%${filters.name}%`);
-//   }
-
-//   if (filters.status) {
-//     query = query.eq("status", filters.status);
-//   }
-
-//   if (filters.workType) {
-//     query = query.eq("work_type", filters.workType);
-//   }
-
-//   if (filters.priority) {
-//     query = query.eq("priority", filters.priority);
-//   }
-
-//   if (filters.startDate) {
-//     query = query.gte("work_date", filters.startDate);
-//   }
-
-//   if (filters.endDate) {
-//     query = query.lte("work_date", filters.endDate);
-//   }
-
-//   const { data, error } = await query;
-
-//   if (error) throw error;
-
-//   return data;
-// }

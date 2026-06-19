@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Search } from 'lucide-react';
-import { WORK_TYPES, STATUSES, PRIORITIES, today } from '../utils/constants';
+import { WORK_TYPES, STATUSES, PRIORITIES, today } from '../../utils/constants';
 
 const defaultForm = {
   name: '',

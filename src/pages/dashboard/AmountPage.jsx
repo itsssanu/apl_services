@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
 import { Search, X, Wallet, TrendingUp, AlertCircle, Users, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatCurrency, formatDate } from '../utils/constants';
+import { formatCurrency, formatDate } from '../../utils/constants';
 import {
   MONTHS,
   YEARS,
   getCurrentMonthYear,
   getMonthDateRange
-} from "../utils/constants";
+} from "../../utils/constants";
 
 function SummaryCard({ label, value, type, icon: Icon }) {
   const styles = {
@@ -37,7 +37,6 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
     endDate
   } = filters;
 
-  console.log("amountSummary", amountSummary);
 
 
   function updateMonth(month) {

@@ -34,9 +34,13 @@ export async function getAccessories(filters = {}, page = 1, limit = 10) {
 }
 
 export async function createAccessory(item) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { error } = await supabase
     .from("accessories")
     .insert({
+      user_id: user.id,
       work_type: item.workType,
       buy_date: item.buyDate,
       product_name: item.productName,
@@ -47,6 +51,9 @@ export async function createAccessory(item) {
 }
 
 export async function updateAccessory(id, item) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { error } = await supabase
     .from("accessories")
     .update({
@@ -55,16 +62,21 @@ export async function updateAccessory(id, item) {
       product_name: item.productName,
       amount: item.amount
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", user.id)
 
   if (error) throw error;
 }
 
 export async function deleteAccessory(id) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const { error } = await supabase
     .from("accessories")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", user.id)
 
   if (error) throw error;
 }

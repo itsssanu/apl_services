@@ -1,5 +1,5 @@
 import { X, Package, Calendar, Tag } from 'lucide-react';
-import { formatDate, formatCurrency } from '../utils/constants';
+import { formatDate, formatCurrency } from '../../utils/constants';
 
 export default function AccessoryViewModal({
   open,

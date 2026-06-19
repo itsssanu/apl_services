@@ -1,5 +1,5 @@
 import { X, Phone, MapPin, Calendar, Clock, AlertCircle, MessageSquare, DollarSign } from 'lucide-react';
-import { STATUS_STYLES, PRIORITY_STYLES, formatDate, formatCurrency } from '../utils/constants';
+import { STATUS_STYLES, PRIORITY_STYLES, formatDate, formatCurrency } from '../../utils/constants';
 
 export default function ViewModal({ open, onClose, item }) {
   if (!open || !item) return null;
@@ -12,7 +12,6 @@ export default function ViewModal({ open, onClose, item }) {
         sum + (parseFloat(accessory.amount) || 0),
       0
     ) || 0;
-  console.log("item view", item);
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>

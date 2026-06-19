@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Plus, Trash2, Package, Search, X, Calendar, Tag, IndianRupee, Eye, Pencil, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { WORK_TYPES, formatDate, formatCurrency, today, MONTHS, YEARS, getCurrentMonthYear, getMonthDateRange } from "../utils/constants";
-import AccessoryViewModal from '../components/AccessoryViewModal';
+import { WORK_TYPES, formatDate, formatCurrency, today, MONTHS, YEARS, getCurrentMonthYear, getMonthDateRange } from "../../utils/constants";
+import AccessoryViewModal from '../../components/modals/AccessoryViewModal';
 
 /* ── Add Product Modal ───────────────────────────────────────────── */
 function AddProductModal({ open, onClose, onSave, editItem }) {

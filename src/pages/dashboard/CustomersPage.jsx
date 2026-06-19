@@ -7,9 +7,9 @@ import {
 import {
   WORK_TYPES, STATUSES, PRIORITIES, STATUS_STYLES, PRIORITY_STYLES, formatDate, formatCurrency, MONTHS, YEARS,
   getCurrentMonthYear, getMonthDateRange
-} from "../utils/constants";
-import WorkItemModal from '../components/WorkItemModal';
-import ViewModal from '../components/ViewModal';
+} from "../../utils/constants";
+import WorkItemModal from '../../components/modals/WorkItemModal';
+import ViewModal from '../../components/modals/ViewModal';
 
 function StatCard({ label, value, type, icon: Icon }) {
   const styles = {
@@ -38,7 +38,6 @@ function CustomerCard({ item, onView, onEdit, onDelete }) {
   const statusClass = STATUS_STYLES[item.status] || 'badge-new';
   const priorityClass = PRIORITY_STYLES[item.priority] || 'priority-none';
 
-  console.log("item", item);
 
   return (
     <div className="card p-4 hover:shadow-card-hover transition-shadow duration-200">
