@@ -186,7 +186,6 @@ export default function WorkItemModal({ open, onClose, onSave, editItem }) {
       alert('Please fill in Customer Name.');
       return;
     }
-    console.log("Saving Item", form);
     const item = {
       ...form,
       id: editItem?.id,

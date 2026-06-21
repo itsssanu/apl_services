@@ -25,6 +25,7 @@ export default function CompanyForm({
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     if (company) {
@@ -42,7 +43,14 @@ export default function CompanyForm({
     setPreview(URL.createObjectURL(file));
   }
 
+  function handleRemoveLogo() {
+    setLogo(null);
+    setPreview("");
+  }
+
   async function handleSubmit(e) {
+    setError("");
+    setSuccess("");
     e.preventDefault();
 
     setError("");
@@ -55,7 +63,7 @@ export default function CompanyForm({
     setLoading(true);
 
     try {
-      let logoUrl = company?.logo_url || "";
+      let logoUrl = preview || "";
 
       if (logo) {
         logoUrl = await uploadCompanyLogo(
@@ -79,7 +87,7 @@ export default function CompanyForm({
           logo_url: logoUrl,
         });
 
-        alert("Company updated successfully.");
+        setSuccess("Company updated successfully.");
       } else {
         const { error } = await createCompany({
           user_id: user.id,
@@ -146,22 +154,43 @@ export default function CompanyForm({
             )}
           </div>
 
-          <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl text-sm font-medium transition">
-            Upload Logo
+          <div className="flex flex-col gap-2">
 
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleLogoChange}
-            />
-          </label>
+            <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl text-sm font-medium text-center transition">
+
+              {preview ? "Change Logo" : "Upload Logo"}
+
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleLogoChange}
+              />
+
+            </label>
+
+            {preview && (
+              <button
+                type="button"
+                onClick={handleRemoveLogo}
+                className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-xl text-sm font-medium transition"
+              >
+                Remove Logo
+              </button>
+            )}
+
+          </div>
         </div>
       </div>
 
       {error && (
         <p className="text-red-500 text-sm">
           {error}
+        </p>
+      )}
+      {success && (
+        <p className="text-green-600 text-sm">
+          {success}
         </p>
       )}
 
@@ -173,8 +202,8 @@ export default function CompanyForm({
         {loading
           ? "Saving..."
           : isFirstSetup
-          ? "Continue →"
-          : "Update Company"}
+            ? "Continue"
+            : "Save Changes"}
       </button>
     </form>
   );

@@ -21,6 +21,7 @@ export default function ProfileForm() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const isEdit = !!profile;
 
@@ -41,26 +42,37 @@ export default function ProfileForm() {
     setPreview(URL.createObjectURL(file));
   }
 
+  function handleRemoveImage() {
+  setImage(null);
+  setPreview("");
+}
+
   async function handleSubmit(e) {
+    setError("");
+    setSuccess("");
     e.preventDefault();
 
     setError("");
-
-    if (!displayName.trim()) {
-      setError("Display Name is required.");
-      return;
-    }
-
     setLoading(true);
 
     try {
-      let avatarUrl = profile?.avatar_url || "";
+      let avatarUrl = preview || "";
 
       if (image) {
         avatarUrl = await uploadProfileImage(
           image,
           user.id
         );
+      }
+
+      if (!displayName.trim()) {
+        setError("Display name is required.");
+        return;
+      }
+
+      if (phone && !/^[0-9]{10}$/.test(phone)) {
+        setError("Enter a valid 10-digit phone number.");
+        return;
       }
 
       if (isEdit) {
@@ -97,13 +109,13 @@ export default function ProfileForm() {
         });
       }
 
-      alert("Profile updated successfully.");
+      setSuccess("Profile updated successfully.");
 
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (
@@ -140,18 +152,32 @@ export default function ProfileForm() {
 
           </div>
 
-          <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl">
+          <div className="flex flex-col gap-2">
 
-            Upload
+            <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl text-center">
 
-            <input
-              hidden
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-            />
+              {preview ? "Change" : "Upload"}
 
-          </label>
+              <input
+                hidden
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+
+            </label>
+
+            {preview && (
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-xl"
+              >
+                Remove
+              </button>
+            )}
+
+          </div>
 
         </div>
 
@@ -185,7 +211,7 @@ export default function ProfileForm() {
         </label>
 
         <input
-          type="text"
+          type="tel"
           className="input-field w-full"
           placeholder="+91 XXXXX XXXXX"
           value={phone}
@@ -233,6 +259,11 @@ export default function ProfileForm() {
       {error && (
         <p className="text-red-500 text-sm">
           {error}
+        </p>
+      )}
+      {success && (
+        <p className="text-green-600 text-sm">
+          {success}
         </p>
       )}
 

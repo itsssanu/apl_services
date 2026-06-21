@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { updateUserPassword } from "../../services/securityService";
+import { changePassword } from "../../services/securityService";
 import PasswordInput from "../../services/PasswordInput";
+import { useAuth } from "../../auth/AuthContext";
 
 export default function SecuritySettings() {
   const [newPassword, setNewPassword] = useState("");
@@ -9,15 +10,22 @@ export default function SecuritySettings() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const { user } = useAuth();
+
 
   async function handleSubmit(e) {
+    if (!currentPassword) {
+      setError("Current password is required.");
+      return;
+    }
     e.preventDefault();
 
     setError("");
     setSuccess("");
 
     if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError("Password must contain at least 6 characters.");
       return;
     }
 
@@ -28,7 +36,11 @@ export default function SecuritySettings() {
 
     setLoading(true);
 
-    const { error } = await updateUserPassword(newPassword);
+    const { error } = await changePassword(
+      user.email,
+      currentPassword,
+      newPassword
+    )
 
     setLoading(false);
 
@@ -39,13 +51,23 @@ export default function SecuritySettings() {
 
     setSuccess("Password updated successfully.");
 
+    setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <div>
+        <label className="block mb-2 font-medium">
+          Current Password
+        </label>
 
+        <PasswordInput
+          value={currentPassword}
+          onChange={setCurrentPassword}
+        />
+      </div>
       <div>
         <label className="block mb-2 font-medium">
           New Password

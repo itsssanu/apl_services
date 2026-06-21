@@ -68,11 +68,6 @@ export default function AppRoutes() {
 
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      {/* <Route
-  path="/settings/security"
-  element={<SecurityPage />}
-/> */}
-
       {/* Protected Layout */}
 
       <Route
