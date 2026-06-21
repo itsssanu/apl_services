@@ -45,7 +45,7 @@ export default function SettingsPage() {
           icon={Shield}
           title="Security"
           description="Change password and security settings."
-          onClick={() => navigate("/settings/security")}
+          onClick={() => navigate("/security")}
         />
 
         <SettingsCard

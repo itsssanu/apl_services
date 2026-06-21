@@ -142,7 +142,7 @@ export default function AppRoutes() {
           element={<SettingsPage />}
         />
         <Route
-          path="/settings/security"
+          path="/security"
           element={<SecurityPage />}
         />
 
