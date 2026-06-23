@@ -13,12 +13,12 @@ const defaultForm = {
   priority: 'No Priority',
   dueDate: '',
   reminder: '',
-  serviceAmount: 0,
-  servicePaid: 0,
+  serviceAmount: "",
+  servicePaid: "",
   serviceBalance: 0,
 
-  accessoriesAmount: 0,
-  accessoriesPaid: 0,
+  accessoriesAmount: "",
+  accessoriesPaid: "",
   accessoriesBalance: 0,
 
   // Accessories
@@ -460,6 +460,7 @@ export default function WorkItemModal({ open, onClose, onSave, editItem }) {
                       value={form.accessoriesPaid}
                       onChange={handleChange}
                       className="input-field  pl-7"
+                      placeholder="0"
                     />
                   </div>
                 </div>
@@ -486,6 +487,7 @@ export default function WorkItemModal({ open, onClose, onSave, editItem }) {
                       name="serviceAmount"
                       value={form.serviceAmount}
                       onChange={handleChange}
+                      placeholder="0"
                       className="input-field  pl-7"
                     />
                   </div>
