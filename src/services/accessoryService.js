@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabase";
 
-export async function getAccessories(filters = {}, page = 1, limit = 10) {
+export async function getAccessories(filters = {}, page = 1, limit = 50) {
   let query = supabase
     .from("accessories")
     .select("*", { count: "exact" })

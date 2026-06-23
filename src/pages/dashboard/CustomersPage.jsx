@@ -510,7 +510,7 @@ export default function CustomersPage({ items, onSave, onDelete, filters, setFil
           </span>
 
           <button
-            disabled={page * 10 >= totalRows}
+            disabled={page * 50 >= totalRows}
             onClick={() => setPage(page + 1)}
             className="w-9 h-9 rounded-full border flex items-center justify-center disabled:opacity-40 hover:bg-gray-100"
           >

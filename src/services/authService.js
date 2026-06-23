@@ -28,8 +28,12 @@ export async function getCurrentUser() {
 
 // NEW
 export async function resetPassword(email) {
+  const redirectUrl = `${import.meta.env.VITE_APP_URL}/reset-password`;
+
+  console.log("Redirect URL:", redirectUrl);
+
   return await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${import.meta.env.VITE_APP_URL}reset-password`,
+    redirectTo: redirectUrl,
   });
 }
 

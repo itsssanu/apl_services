@@ -15,7 +15,7 @@ const AppContext = createContext();
 export function AppProvider({ children }) {
     const { user } = useAuth();
 
-    const LIMIT = 10;
+    const LIMIT = 50;
 
     const current = getCurrentMonthYear();
 
@@ -166,7 +166,7 @@ export function AppProvider({ children }) {
         const result = await getAccessories(
             accessoryFilters,
             accessoryPage,
-            10
+            50
         );
 
         setAccessoryTotalRows(result.count);
@@ -206,7 +206,7 @@ export function AppProvider({ children }) {
         const result = await getAmountSummary(
             amountFilters,
             amountPage,
-            10
+            50
         );
 
         setAmountTotalRows(result.count);
@@ -257,6 +257,7 @@ export function AppProvider({ children }) {
                 amountPage,
                 setAmountPage,
                 amountTotalRows,
+                loadAmount,
             }}
         >
             {children}

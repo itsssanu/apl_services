@@ -52,7 +52,7 @@ export default function SettingsPage() {
           icon={Info}
           title="About"
           description="Application version and information."
-          onClick={() => navigate("/settings/about")}
+          onClick={() => navigate("/about")}
         />
 
       </div>

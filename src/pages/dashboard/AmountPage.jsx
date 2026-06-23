@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, X, Wallet, TrendingUp, AlertCircle, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/constants';
 import {
@@ -7,6 +7,7 @@ import {
   getCurrentMonthYear,
   getMonthDateRange
 } from "../../utils/constants";
+import { useApp } from '../../context/AppContext';
 
 function SummaryCard({ label, value, type, icon: Icon }) {
   const styles = {
@@ -36,6 +37,11 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
     startDate,
     endDate
   } = filters;
+  const { loadAmount } = useApp();
+
+  useEffect(() => {
+    loadAmount();
+  }, []);
 
 
 
@@ -410,7 +416,7 @@ export default function AmountPage({ amountSummary, filters, setFilters, page, s
     </span>
 
     <button
-      disabled={page * 10 >= totalRows}
+      disabled={page * 50 >= totalRows}
       onClick={() => setPage(page + 1)}
       className="w-9 h-9 rounded-full border flex items-center justify-center disabled:opacity-40 hover:bg-gray-100"
     >
