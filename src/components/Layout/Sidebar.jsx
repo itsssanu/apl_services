@@ -48,7 +48,11 @@ export default function Sidebar({ open, onClose }) {
             <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center">
               {company?.logo_url ? (
                 <img
-                  src={company.logo_url}
+                  src={
+                    company?.logo_url
+                      ? `${company.logo_url}?t=${Date.now()}`
+                      : "/default-logo.png"
+                  }
                   alt="Logo"
                   className="w-full h-full object-cover"
                 />
@@ -101,32 +105,43 @@ export default function Sidebar({ open, onClose }) {
         </nav>
 
         {/* Settings */}
-<div className="px-3 pb-4 border-t border-white/10 pt-4">
-  <button
-    onClick={() => {
-      navigate("/settings");
-      onClose();
-    }}
-    className={`sidebar-link w-full text-left ${
-      location.pathname.startsWith("/settings")
-        ? "active"
-        : ""
-    }`}
-  >
-    <Settings className="w-4 h-4 flex-shrink-0" />
-    <span>Settings</span>
+        <div className="px-3 pb-4 border-t border-white/10 pt-4">
+          <button
+            onClick={() => {
+              navigate("/settings");
+              onClose();
+            }}
+            className={`sidebar-link w-full text-left ${location.pathname.startsWith("/settings")
+                ? "active"
+                : ""
+              }`}
+          >
+            <Settings className="w-4 h-4 flex-shrink-0" />
+            <span>Settings</span>
 
-    {location.pathname.startsWith("/settings") && (
-      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white/70" />
-    )}
-  </button>
-</div>
+            {location.pathname.startsWith("/settings") && (
+              <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white/70" />
+            )}
+          </button>
+        </div>
 
         {/* Footer */}
         <div className="px-4 py-4 border-t border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-              {company?.company_name?.charAt(0)?.toUpperCase() || "V"}
+           <div className="w-10 h-10 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center">
+              {company?.logo_url ? (
+                <img
+                  src={
+                    company?.logo_url
+                      ? `${company.logo_url}?t=${Date.now()}`
+                      : "/default-logo.png"
+                  }
+                  alt="Logo"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Wrench className="w-5 h-5 text-white" />
+              )}
             </div>
             <div>
               <div className="text-white text-sm font-medium">{company?.company_name || "Velvit"}</div>

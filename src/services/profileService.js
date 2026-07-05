@@ -1,16 +1,13 @@
 import { supabase } from "../lib/supabase";
 
 export async function uploadProfileImage(file, userId) {
-
   const ext = file.name.split(".").pop();
 
-  const fileName = `${userId}.${ext}`;
+  const fileName = `${userId}-${Date.now()}.${ext}`;
 
   const { error } = await supabase.storage
     .from("profile-images")
-    .upload(fileName, file, {
-      upsert: true,
-    });
+    .upload(fileName, file);
 
   if (error) throw error;
 

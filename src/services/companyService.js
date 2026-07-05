@@ -2,23 +2,21 @@ import { supabase } from "../lib/supabase";
 
 export async function uploadCompanyLogo(file, userId) {
 
-  const ext = file.name.split(".").pop();
+    const ext = file.name.split(".").pop();
 
-  const fileName = `${userId}.${ext}`;
+    const fileName = `${userId}-${Date.now()}.${ext}`;
 
-  const { error } = await supabase.storage
-    .from("company-logos")
-    .upload(fileName, file, {
-      upsert: true,
-    });
+    const { error } = await supabase.storage
+        .from("company-logos")
+        .upload(fileName, file);
 
-  if (error) throw error;
+    if (error) throw error;
 
-  const { data } = supabase.storage
-    .from("company-logos")
-    .getPublicUrl(fileName);
+    const { data } = supabase.storage
+        .from("company-logos")
+        .getPublicUrl(fileName);
 
-  return data.publicUrl;
+    return data.publicUrl;
 }
 
 export async function createCompany(company) {

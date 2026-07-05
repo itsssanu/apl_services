@@ -28,9 +28,14 @@ export default function CompanyForm({
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    if (company) {
-      setCompanyName(company.company_name || "");
-      setPreview(company.logo_url || "");
+    if (!company) return;
+
+    setCompanyName(company.company_name || "");
+
+    if (company.logo_url) {
+      setPreview(`${company.logo_url}?t=${Date.now()}`);
+    } else {
+      setPreview("");
     }
   }, [company]);
 
@@ -84,7 +89,7 @@ export default function CompanyForm({
         setCompany({
           ...company,
           company_name: companyName,
-          logo_url: logoUrl,
+          logo_url: logoUrl
         });
 
         setSuccess("Company updated successfully.");

@@ -26,10 +26,15 @@ export default function ProfileForm() {
   const isEdit = !!profile;
 
   useEffect(() => {
-    if (profile) {
-      setDisplayName(profile.display_name || "");
-      setPhone(profile.phone || "");
-      setPreview(profile.avatar_url || "");
+    if (!profile) return;
+
+    setDisplayName(profile.display_name || "");
+    setPhone(profile.phone || "");
+
+    if (profile.avatar_url) {
+      setPreview(`${profile.avatar_url}?t=${Date.now()}`);
+    } else {
+      setPreview("");
     }
   }, [profile]);
 
@@ -45,6 +50,13 @@ export default function ProfileForm() {
   function handleRemoveImage() {
   setImage(null);
   setPreview("");
+
+  if (profile) {
+    setProfile({
+      ...profile,
+      avatar_url: "",
+    });
+  }
 }
 
   async function handleSubmit(e) {
@@ -59,10 +71,9 @@ export default function ProfileForm() {
       let avatarUrl = preview || "";
 
       if (image) {
-        avatarUrl = await uploadProfileImage(
-          image,
-          user.id
-        );
+        avatarUrl = await uploadProfileImage(image, user.id);
+
+        setPreview(`${avatarUrl}?t=${Date.now()}`);
       }
 
       if (!displayName.trim()) {
